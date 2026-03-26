@@ -82,3 +82,35 @@ function resetApp () {
 
     pdfControls.classList.add( 'hidden' );
 }
+
+async function handleFileSelect ( e ) {
+    const file = e.target.files[ 0 ];
+    if ( ! file ) return;
+
+    clearRegions();
+    resetZoom();
+
+    if ( file.type === 'application/pdf' ) {
+        showLoader( t( 'status_load_pdf' ), 150 );
+
+        const fileReader = new FileReader();
+        fileReader.onload = async function () {
+            await loadPdf( this.result );
+            hideLoader();
+            showStep( 2, () => resetZoom() );
+        };
+        fileReader.readAsArrayBuffer( file );
+    } else if ( file.type.startsWith( 'image/' ) ) {
+        showLoader( t( 'status_load_img' ), 150 );
+        pdfControls.classList.add( 'hidden' );
+
+        const img = new Image();
+        img.onload = () => {
+            setupCanvas( img.width, img.height );
+            docCtx.drawImage( img, 0, 0 );
+            hideLoader();
+            showStep( 2, () => resetZoom() );
+        };
+        img.src = URL.createObjectURL( file );
+    }
+}

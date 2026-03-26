@@ -129,3 +129,38 @@ function checkHit ( x, y ) {
 
     return null;
 }
+
+function onMouseDown ( e ) {
+    if( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
+    if ( e.target.closest( '.zoom-overlay' ) || e.target.closest( '.pagination' ) ) return;
+
+    if ( e.ctrlKey || e.button === 1 ) {
+        e.preventDefault(); 
+
+        draggingState = 'pan';
+        startX = e.clientX;
+        startY = e.clientY;
+        workspace.style.cursor = 'grabbing';
+
+        return;
+    }
+
+    overlayCanvas.focus();
+
+    const pos = getMousePos( e );
+    startX = pos.x;
+    startY = pos.y;
+
+    const hit = checkHit( pos.x, pos.y );
+    if ( hit ) {
+        activeRegionIndex = hit.index;
+        draggingState = hit.type;
+        initialRegionState = { ...regions[ activeRegionIndex ] };
+    } else {
+        draggingState = 'create';
+        activeRegionIndex = regions.length;
+        regions.push( { x: startX, y: startY, w: 0, h: 0 } );
+    }
+
+    refreshOverlay();
+}

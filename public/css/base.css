@@ -1,0 +1,39 @@
+@font-face {
+    font-family: 'Inter';
+    src: url( '../assets/fonts/Inter.woff2' ) format( 'woff2' );
+    font-weight: 100 900;
+}
+
+:root {
+    --font-sans: 'Inter', sans-serif;
+    --text-color: #1a202c;
+    --bg-color: #f4f6f8;
+    --accent-bg: #f8fafc;
+    --panel-bg: #ffffff;
+    --border-color: #cbd5e1;
+    --primary-color: #0f4c81;
+    --primary-hover: #0d406b;
+    --secondary-color: #e2e8f0;
+    --secondary-hover: #cbd5e1;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    line-height: 1.5;
+    font-family: var( --font-sans );
+    font-size: 14px;
+    color: var( --text-color );
+    background-color: var( --bg-color );
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+}

@@ -39,8 +39,8 @@ export function setupCanvas ( width, height ) {
 
     overlayCanvas.width = width + OVERLAY_PAD * 2;
     overlayCanvas.height = height + OVERLAY_PAD * 2;
-    overlayCanvas.style.left = -OVERLAY_PAD + "px";
-    overlayCanvas.style.top = -OVERLAY_PAD + "px";
+    overlayCanvas.style.left = -OVERLAY_PAD + 'px';
+    overlayCanvas.style.top = -OVERLAY_PAD + 'px';
 
     resetZoom();
 }
@@ -56,4 +56,45 @@ function calculateBaseScale () {
     const scaledH = currentImageHeight * baseScale * userZoom;
     panX = ( workspace.clientWidth - scaledW ) / 2;
     panY = ( workspace.clientHeight - scaledH ) / 2;
+}
+
+function applyZoom () {
+    if( ! currentImageWidth ) return;
+
+    wrapper.style.width = currentImageWidth + 'px';
+    wrapper.style.height = currentImageHeight + 'px';
+
+    const currentScale = baseScale * userZoom;
+    wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${currentScale})`;
+    zoomLevelDisplay.textContent = Math.round( userZoom * 100 ) + '%';
+}
+
+export function resetZoom () {
+    userZoom = 1;
+    calculateBaseScale();
+    applyZoom();
+}
+
+export function clearRegions () {
+    regions = [];
+    activeRegionIndex = -1;
+    refreshOverlay();
+}
+
+export function cropRegionToBlob ( region ) {
+    return new Promise ( ( resolve ) => {
+        const tempCanvas = document.createElement( 'canvas' );
+        tempCanvas.width = region.w;
+        tempCanvas.height = region.h;
+
+        const tempCtx = tempCanvas.getContext( '2d' );
+        tempCtx.fillStyle = 'white';
+        tempCtx.fillRect( 0, 0, region.w, region.h );
+        tempCtx.drawImage( documentCanvas, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h );
+        tempCanvas.toBlob( ( blob ) => resolve( blob ), 'image/png' );
+    } );
+}
+
+export function getDocumentBlob () {
+    return new Promise ( resolve => documentCanvas.toBlob( resolve, 'image/png' ) );
 }

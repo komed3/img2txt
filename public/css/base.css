@@ -7,6 +7,7 @@
 :root {
     --font-sans: 'Inter', sans-serif;
     --text-color: #1a202c;
+    --text-muted: #64748b;
     --bg-color: #f4f6f8;
     --accent-bg: #f8fafc;
     --panel-bg: #ffffff;
@@ -36,4 +37,60 @@ body {
     overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
+}
+
+button,
+input[type="file"],
+input[type="radio"],
+input[type="checkbox"],
+select,
+label[for] {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+header {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+    padding: 15px 30px;
+    background: var( --panel-bg );
+    border-bottom: 1px solid var( --border-color );
+    box-shadow: 0 1px 3px rgba( 0 0 0 / 0.05 );
+}
+
+header .app-logo {
+    display: flex;
+    align-items: center;
+    line-height: 1;
+}
+
+header .app-logo img {
+    height: 30px;
+}
+
+header .subtitle {
+    margin-top: 4px;
+    min-height: 18px;
+    font-size: 12px;
+    color: var( --text-muted );
+}
+
+footer {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 10.5px;
+    color: var( --text-muted );
+    background: var( --bg-color );
+}
+
+footer .divider {
+    margin: 0 8px;
+    opacity: 0.5;
 }

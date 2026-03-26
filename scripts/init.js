@@ -15,4 +15,7 @@ const urls = [
     { url: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js', dest: join( TESSERACT_DIR, 'tesseract-core.wasm.js' ) }
 ];
 
-const langs = [ 'eng', 'deu', 'fra', 'spa', 'ita', 'nld', 'pol', 'por' ];
+for ( const lang of [ 'eng', 'deu', 'fra', 'spa', 'ita', 'nld', 'pol', 'por' ] ) urls.push( {
+    url: `https://tessdata.projectnaptha.com/4.0.0/${lang}.traineddata.gz`,
+    dest: join( LANG_DIR, `${lang}.traineddata.gz` )
+} );

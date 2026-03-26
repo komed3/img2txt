@@ -1,0 +1,11 @@
+{
+  "name": "@komed3/img2txt",
+  "description": "Precise text extraction from images and PDF documents",
+  "private": true,
+  "version": "0.1.0",
+  "author": {
+    "name": "Paul Köhler (komed3)",
+    "url": "https://komed3.de",
+    "email": "webmaster@komed3.de"
+  }
+}

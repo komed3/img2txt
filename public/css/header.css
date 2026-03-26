@@ -1,0 +1,51 @@
+header {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+    padding: 14px 22px;
+    background: var( --panel-bg );
+    border-bottom: 1px solid var( --border-color );
+    box-shadow: 0 1px 3px rgba( 0 0 0 / 0.05 );
+}
+
+.app-logo {
+    display: flex;
+    align-items: center;
+    line-height: 1;
+}
+
+.app-logo img {
+    height: 30px;
+}
+
+.lang-switch {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    background: var( --accent-bg );
+    border: 1px solid var( --border-color );
+    border-radius: 4px;
+}
+
+.lang-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    transition: all 0.1s ease;
+}
+
+.lang-btn.active {
+    background: var( --primary-color );
+    color: white;
+}
+
+.lang-btn:not( .active ):hover {
+    color: var( --primary-color );
+    background: #e0e7ff;
+}

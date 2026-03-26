@@ -39,29 +39,11 @@ body {
     user-select: none;
 }
 
-button,
-input[type="file"],
-input[type="radio"],
-input[type="checkbox"],
-select,
-label[for] {
+input[type="file"], input[type="radio"], input[type="checkbox"],
+button, select, label[for] {
     cursor: pointer;
 }
 
 .hidden {
     display: none !important;
-}
-
-footer {
-    flex-shrink: 0;
-    padding: 8px 10px;
-    text-align: center;
-    font-size: 10.5px;
-    color: var( --text-muted );
-    background: var( --bg-color );
-}
-
-footer .divider {
-    margin: 0 8px;
-    opacity: 0.5;
 }

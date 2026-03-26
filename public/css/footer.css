@@ -1,0 +1,13 @@
+footer {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 10.5px;
+    color: var( --text-muted );
+    background: var( --bg-color );
+}
+
+footer .divider {
+    margin: 0 8px;
+    opacity: 0.5;
+}

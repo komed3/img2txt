@@ -27,3 +27,33 @@ let initialRegionState = null;
 const OVERLAY_PAD = 2000;
 const HANDLE_SIZE = 8;
 const MIN_SIZE = 15;
+
+export function getRegions () { return regions }
+
+export function setupCanvas ( width, height ) {
+    currentImageWidth = width;
+    currentImageHeight = height;
+
+    documentCanvas.width = width;
+    documentCanvas.height = height;
+
+    overlayCanvas.width = width + OVERLAY_PAD * 2;
+    overlayCanvas.height = height + OVERLAY_PAD * 2;
+    overlayCanvas.style.left = -OVERLAY_PAD + "px";
+    overlayCanvas.style.top = -OVERLAY_PAD + "px";
+
+    resetZoom();
+}
+
+function calculateBaseScale () {
+    if ( ! currentImageWidth ) return;
+
+    const parentW = workspace.clientWidth - 40;
+    const parentH = workspace.clientHeight - 40;
+    baseScale = Math.min( ( parentW / currentImageWidth ), ( parentH / currentImageHeight ), 1 );
+
+    const scaledW = currentImageWidth * baseScale * userZoom;
+    const scaledH = currentImageHeight * baseScale * userZoom;
+    panX = ( workspace.clientWidth - scaledW ) / 2;
+    panY = ( workspace.clientHeight - scaledH ) / 2;
+}

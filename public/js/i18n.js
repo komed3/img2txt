@@ -1,11 +1,11 @@
-let currentLang = localStorage.getItem( 'img2txt-lang' ) || 'en';
+let curLang = localStorage.getItem( 'img2txt-lang' ) || 'en';
 
-export let dict = {};
+export const DICT = {};
 
 export async function setLanguage ( lang ) {
-    if ( ! dict[ lang ] ) try {
+    if ( ! DICT[ lang ] ) try {
         const res = await fetch( `locales/${lang}.json` );
-        if ( res.ok ) dict[ lang ] = await res.json();
+        if ( res.ok ) DICT[ lang ] = await res.json();
         else {
             console.error( `Missing translation file: ${lang}.json` );
             return;
@@ -15,32 +15,33 @@ export async function setLanguage ( lang ) {
         return;
     }
 
-    currentLang = lang;
+    curLang = lang;
     localStorage.setItem( 'img2txt-lang', lang );
 
-    document.title = dict[ lang ].title || 'img2txt';
+    document.title = t( 'title', lang, 'img2txt' );
 
     document.querySelectorAll( '[data-i18n]' ).forEach( el => {
         const key = el.getAttribute( 'data-i18n' );
-        if ( dict[ lang ][ key ] ) el.textContent = dict[ lang ][ key ];
+        if ( DICT[ lang ][ key ] ) el.textContent = t( key, lang );
     } );
 
     document.querySelectorAll( '[data-i18n-placeholder]' ).forEach( el => {
         const key = el.getAttribute( 'data-i18n-placeholder' );
-        if ( dict[ lang ][ key ] ) el.placeholder = dict[ lang ][ key ];
+        if ( DICT[ lang ][ key ] ) el.placeholder = t( key, lang );
     } );
 
     document.getElementById( 'langDe' ).classList.toggle( 'active', lang === 'de' );
     document.getElementById( 'langEn' ).classList.toggle( 'active', lang === 'en' );
 }
 
-export function t ( key ) {
-    if( ! dict[ currentLang ] ) return key;
-    return dict[ currentLang ][ key ] || key;
+export function t ( key, lang = undefined, fb = undefined ) {
+    if( ! DICT[ lang ?? curLang ] ) return fb ?? key;
+    return DICT[ lang ?? curLang ][ key ] || ( fb ?? key );
 }
 
 export async function initI18n () {
     document.getElementById( 'langDe' ).addEventListener( 'click', () => setLanguage( 'de' ) );
     document.getElementById( 'langEn' ).addEventListener( 'click', () => setLanguage( 'en' ) );
-    await setLanguage( currentLang );
+
+    await setLanguage( curLang );
 }

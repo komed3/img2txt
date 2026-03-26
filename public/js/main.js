@@ -43,3 +43,28 @@ copyBtn.addEventListener( 'click', () => {
     navigator.clipboard.writeText( resultText.value ).then( () => showToast( t( 'copy_done' ) ) );
 } );
 
+extractBtn.addEventListener( 'click', async () => {
+    showLoader( t( 'processing' ) );
+    const startTime = performance.now();
+
+    try {
+        const lang = languageSelect.value;
+        const regions = getRegions();
+        const blobs = [];
+
+        if ( regions.length === 0 ) blobs.push( await getDocumentBlob() );
+        else for ( const r of regions ) blobs.push( await cropRegionToBlob( r ) );
+
+        const text = await processOcr( blobs, lang );
+        const duration = performance.now() - startTime;
+
+        resultText.value = text;
+        calcStats( text, duration );
+        showStep( 3 );
+    } catch ( err ) {
+        console.error( err );
+        alert( t( 'err_fatal' ) + err.message );
+    } finally {
+        hideLoader();
+    }
+} );

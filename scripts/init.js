@@ -19,3 +19,10 @@ for ( const lang of [ 'eng', 'deu', 'fra', 'spa', 'ita', 'nld', 'pol', 'por' ] )
     url: `https://tessdata.projectnaptha.com/4.0.0/${lang}.traineddata.gz`,
     dest: join( LANG_DIR, `${lang}.traineddata.gz` )
 } );
+
+const makeDir = () => {
+    mkdirSync( VENDOR_DIR, { recursive: true } );
+    mkdirSync( TESSERACT_DIR, { recursive: true } );
+    mkdirSync( LANG_DIR, { recursive: true } );
+    mkdirSync( PDFJS_DIR, { recursive: true } );
+};

@@ -29,6 +29,7 @@
   "status_render": "Rendere Seite …",
   "subtitle": "Präzise Textextraktion aus Bild- und PDF-Dokumenten",
   "tip_text": "Tipp: Ziehe Rechtecke auf dem Dokument auf. Diese können nachträglich verschoben, an den Rändern vergrößern/verkleinern oder mit der [Entf]-Taste gelöscht werden. Halte die [Strg]-Taste gedrückt, um den sichtbaren Bereich zu verschieben. Mit der [Mausrad]-Taste kann gezoomt werden.",
+  "title": "img2txt",
   "view_nav": "Ansicht",
   "wait_msg": "Extraktion läuft. Bitte warten …",
   "zoom_reset": "Zurücksetzen"

@@ -43,3 +43,16 @@ const downloadFile = ( url, dest ) => new Promise( ( resolve, reject ) => {
         } );
     } ).on( 'error', reject );
 } );
+
+const init = async () => {
+    console.log( 'Initializing Tesseract/PDF bundles and languages ...' );
+    makeDir();
+    
+    for ( const { url, dest } of urls ) {
+        console.log( `Downloading ${url}...` );
+        await downloadFile( url, dest );
+        console.log( `Successfully saved to ${dest}` );
+    }
+
+    console.log( 'All Tesseract/PDF bundles and languages successfully localized.' );
+};

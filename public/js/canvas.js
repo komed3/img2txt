@@ -346,3 +346,59 @@ function refreshOverlay () {
 
     overCtx.restore();
 }
+
+// Binds
+
+function zoomBtn ( delta ) {
+    const newZoom = Math.max( 0.2, Math.min( 5, userZoom + delta ) );
+
+    if ( newZoom !== userZoom ) {
+        const oldScale = baseScale * userZoom;
+        const newScale = baseScale * newZoom;
+        userZoom = newZoom;
+
+        const centerX = workspace.clientWidth / 2;
+        const centerY = workspace.clientHeight / 2;
+        panX = centerX - ( ( centerX - panX ) / oldScale ) * newScale;
+        panY = centerY - ( ( centerY - panY ) / oldScale ) * newScale;
+
+        applyZoom();
+    }
+}
+
+zoomInBtn.addEventListener( 'click', () => zoomBtn( 0.2 ) );
+zoomOutBtn.addEventListener( 'click', () => zoomBtn( -0.2 ) );
+zoomResetBtn.addEventListener( 'click', resetZoom );
+
+workspace.addEventListener( 'wheel', ( e ) => {
+    if ( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
+    e.preventDefault();
+
+    const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+    const newZoom = Math.max( 0.2, Math.min( 5, userZoom + zoomDelta ) );
+
+    if ( newZoom !== userZoom ) {
+        const oldScale = baseScale * userZoom;
+        const newScale = baseScale * newZoom;
+        userZoom = newZoom;
+
+        const workRect = workspace.getBoundingClientRect();
+        const mouseX = e.clientX - workRect.left;
+        const mouseY = e.clientY - workRect.top;
+        panX = mouseX - ( ( mouseX - panX ) / oldScale ) * newScale;
+        panY = mouseY - ( ( mouseY - panY ) / oldScale ) * newScale;
+
+        applyZoom();
+    }
+}, { passive: false } );
+
+overlayCanvas.addEventListener( 'keydown', ( e ) => {
+    if ( ( e.key === 'Delete' || e.key === 'Backspace' ) && activeRegionIndex !== -1 ) {
+        e.preventDefault();
+
+        regions.splice( activeRegionIndex, 1 );
+        activeRegionIndex = -1;
+
+        refreshOverlay();
+    }
+} );

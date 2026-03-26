@@ -56,3 +56,5 @@ const init = async () => {
 
     console.log( 'All Tesseract/PDF bundles and languages successfully localized.' );
 };
+
+init().catch( console.error );

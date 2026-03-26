@@ -402,3 +402,13 @@ overlayCanvas.addEventListener( 'keydown', ( e ) => {
         refreshOverlay();
     }
 } );
+
+// Disable middle click autoscroll globally
+document.addEventListener( 'mousedown', ( e ) => {
+    if ( e.button === 1 ) e.preventDefault();
+} );
+
+workspace.addEventListener( 'mousedown', onMouseDown );
+window.addEventListener( 'mousemove', onMouseMove );
+window.addEventListener( 'mouseup', onMouseUp );
+window.addEventListener( 'resize', resetZoom );

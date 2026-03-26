@@ -1,0 +1,95 @@
+/* Map-like Zoom Overlay */
+
+.zoom-overlay {
+    position: absolute;
+    right: 25px;
+    bottom: 25px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba( 0 0 0 / 0.15 );
+}
+
+.map-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2px auto;
+    width: 32px;
+    height: 32px;
+    color: #475569;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.map-btn:hover {
+    color: var( --primary-color );
+    background: #f1f5f9;
+}
+
+.map-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.zoom-divider {
+    margin: 4px 6px;
+    height: 1px;
+    background: var( --border-color );
+}
+
+.spacer {
+    margin-top: 6px;
+    margin-bottom: 2px;
+}
+
+.zoom-overlay-text {
+    padding: 6px 0;
+    text-align: center;
+    font-family: var( --font-sans );
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+/* Workspace Canvas */
+
+.workspace {
+    position: relative;
+    flex: 1;
+    background: #e2e8f0;
+    border: 1px solid var( --border-color );
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.canvas-wrapper {
+    position: absolute;
+    transform-origin: 0 0;
+    background: #fff;
+    box-shadow:
+        0 4px 6px -1px rgba( 0 0 0 / 0.1 ),
+        0 2px 4px -1px rgba( 0 0 0 / 0.06 );
+}
+
+canvas {
+    display: block;
+}
+
+#documentCanvas {
+    width: 100%;
+    height: 100%;
+}
+
+#overlayCanvas {
+    position: absolute;
+}
+
+#overlayCanvas:focus {
+    outline: none;
+}

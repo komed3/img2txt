@@ -1,4 +1,4 @@
-const { mkdirSync } = require( 'node:fs' );
+const { createWriteStream, mkdirSync } = require( 'node:fs' );
 const { get } = require( 'node:https' );
 const { join } = require( 'node:path' );
 
@@ -26,3 +26,20 @@ const makeDir = () => {
     mkdirSync( LANG_DIR, { recursive: true } );
     mkdirSync( PDFJS_DIR, { recursive: true } );
 };
+
+const downloadFile = ( url, dest ) => new Promise( ( resolve, reject ) => {
+    get( url, ( res ) => {
+        if ( res.statusCode !== 200 ) {
+            reject( new Error( `Failed to get '${url}' (${res.statusCode})` ) );
+            return;
+        }
+
+        const fileStream = createWriteStream( dest );
+        res.pipe( fileStream );
+
+        fileStream.on( 'finish', () => {
+            fileStream.close();
+            resolve();
+        } );
+    } ).on( 'error', reject );
+} );

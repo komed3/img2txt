@@ -21,6 +21,117 @@
             </div>
         </header>
 
+        <div class="wizard-container">
+
+            <!-- STEP 1: UPLOAD -->
+            <div id="step1" class="step active-step">
+                <div class="upload-zone" id="uploadZone">
+                    <svg class="upload-icon"><use href="assets/images/icons.svg#icon-upload"></use></svg>
+                    <div class="upload-text" data-i18n="dropzone_title"></div>
+                    <div class="upload-subtext" data-i18n="dropzone_sub"></div>
+                    <input type="file" id="fileInput" accept="image/*,application/pdf" class="hidden-input">
+                </div>
+            </div>
+
+            <!-- STEP 2: REGION SELECTION & EXTRACTION -->
+            <div id="step2" class="step">
+                <div class="step2-layout">
+                    <aside class="sidebar">
+                        <section class="control-group">
+                            <h2 data-i18n="ocr_settings"></h2>
+                            <div class="form-row">
+                                <label for="languageSelect" data-i18n="ocr_lang"></label>
+                                <select id="languageSelect">
+                                    <option value="eng" selected>English</option>
+                                    <option value="deu">Deutsch</option>
+                                    <option value="fra">Français</option>
+                                    <option value="spa">Español</option>
+                                    <option value="ita">Italiano</option>
+                                    <option value="nld">Nederlands</option>
+                                    <option value="pol">Polski</option>
+                                    <option value="por">Português</option>
+                                </select>
+                            </div>
+                        </section>
+
+                        <section class="control-group">
+                            <h2 data-i18n="actions"></h2>
+                            <p class="instruction" data-i18n="tip_text"></p>
+                            <div class="action-buttons">
+                                <button id="clearRegionsBtn" class="btn btn-secondary" data-i18n="clear_Btn"></button>
+                                <button id="extractBtn" class="btn btn-primary" data-i18n="extract_Btn"></button>
+                            </div>
+                        </section>
+
+                        <div id="pdfControls" class="control-group hidden">
+                            <h2 data-i18n="pdf_nav"></h2>
+                            <div class="pagination">
+                                <button id="prevPageBtn" class="btn btn-small" data-i18n="prev_Btn"></button>
+                                <span class="page-info"><span data-i18n="page_lbl"></span> <span id="pageNum">1</span> / <span id="pageCount">?</span></span>
+                                <button id="nextPageBtn" class="btn btn-small" data-i18n="next_Btn"></button>
+                            </div>
+                        </div>
+
+                        <button id="cancelBtn" class="btn btn-ghost" data-i18n="cancel_Btn" style="margin-top:auto;"></button>
+                    </aside>
+
+                    <section class="workspace" id="workspace">
+                        <div class="canvas-wrapper" id="canvasWrapper">
+                            <canvas id="documentCanvas"></canvas>
+                            <canvas id="overlayCanvas" tabindex="0"></canvas>
+                        </div>
+                    </section>
+
+                    <div class="zoom-overlay">
+                        <button id="zoomInBtn" class="map-btn" aria-label="Zoom In">
+                            <svg><use href="assets/images/icons.svg#icon-plus"></use></svg>
+                        </button>
+                        <div class="zoom-divider"></div>
+                        <button id="zoomOutBtn" class="map-btn" aria-label="Zoom Out">
+                            <svg><use href="assets/images/icons.svg#icon-minus"></use></svg>
+                        </button>
+                        <div class="zoom-divider spacer"></div>
+                        <button id="zoomResetBtn" class="map-btn" aria-label="Reset Zoom">
+                            <svg><use href="assets/images/icons.svg#icon-reset"></use></svg>
+                        </button>
+                        <div id="zoomLevelDisplay" class="zoom-overlay-text">100%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: RESULT & STATISTICS -->
+            <div id="step3" class="step">
+                <div class="step3-layout">
+                    <div class="result-header">
+                        <h2 data-i18n="result_title"></h2>
+                        
+                        <div class="stats-row">
+                            <div class="stat-box">
+                                <span class="stat-value" id="statWords">0</span>
+                                <span class="stat-label" data-i18n="stat_words"></span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value" id="statParagraphs">0</span>
+                                <span class="stat-label" data-i18n="stat_paragraphs"></span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value" id="statTime">0.0s</span>
+                                <span class="stat-label" data-i18n="stat_time"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <textarea id="resultText" readonly data-i18n-placeholder="result_placeholder"></textarea>
+
+                    <div class="result-actions">
+                        <button id="restartBtn" class="btn btn-secondary narrow-btn" data-i18n="restart_Btn"></button>
+                        <button id="copyBtn" class="btn btn-primary narrow-btn" data-i18n="copy_Btn"></button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
         <footer>
             <span data-i18n="copyright"></span>
             <span class="divider">—</span>

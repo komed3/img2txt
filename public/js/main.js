@@ -68,3 +68,17 @@ extractBtn.addEventListener( 'click', async () => {
         hideLoader();
     }
 } );
+
+function resetApp () {
+    fileInput.value = '';
+    resultText.value = '';
+
+    const docCanvas = document.getElementById( 'documentCanvas' );
+    docCtx.clearRect( 0, 0, docCanvas.width, docCanvas.height );
+
+    clearRegions();
+    resetZoom();
+    showStep( 1 );
+
+    pdfControls.classList.add( 'hidden' );
+}

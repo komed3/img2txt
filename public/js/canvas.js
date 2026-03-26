@@ -59,7 +59,7 @@ function calculateBaseScale () {
 }
 
 function applyZoom () {
-    if( ! currentImageWidth ) return;
+    if ( ! currentImageWidth ) return;
 
     wrapper.style.width = currentImageWidth + 'px';
     wrapper.style.height = currentImageHeight + 'px';
@@ -131,7 +131,7 @@ function checkHit ( x, y ) {
 }
 
 function onMouseDown ( e ) {
-    if( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
+    if ( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
     if ( e.target.closest( '.zoom-overlay' ) || e.target.closest( '.pagination' ) ) return;
 
     if ( e.ctrlKey || e.button === 1 ) {
@@ -160,6 +160,99 @@ function onMouseDown ( e ) {
         draggingState = 'create';
         activeRegionIndex = regions.length;
         regions.push( { x: startX, y: startY, w: 0, h: 0 } );
+    }
+
+    refreshOverlay();
+}
+
+function onMouseMove ( e ) {
+    if ( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
+
+    if ( draggingState === 'pan' ) {
+        panX += e.clientX - startX;
+        panY += e.clientY - startY;
+        startX = e.clientX;
+        startY = e.clientY;
+        workspace.style.cursor = 'grabbing';
+
+        applyZoom();
+
+        return;
+    }
+
+    const pos = getMousePos( e );
+
+    if ( ! draggingState ) {
+        if ( e.ctrlKey ) {
+            workspace.style.cursor = 'grab';
+            return;
+        }
+
+        let newHoverIndex = -1;
+        const hit = checkHit( pos.x, pos.y );
+
+        if ( e.target === overlayCanvas || e.target === documentCanvas || e.target === wrapper ) {
+            if ( hit ) {
+                newHoverIndex = hit.index;
+
+                if ( hit.type.startsWith( 'resize-tl' ) || hit.type.startsWith( 'resize-br' ) ) workspace.style.cursor = 'nwse-resize';
+                else if ( hit.type.startsWith( 'resize-tr' ) || hit.type.startsWith( 'resize-bl' ) ) workspace.style.cursor = 'nesw-resize';
+                else workspace.style.cursor = 'move';
+            }
+            else workspace.style.cursor = 'crosshair';
+        }
+        else workspace.style.cursor = 'grab';
+
+        if ( newHoverIndex !== hoverRegionIndex ) {
+            hoverRegionIndex = newHoverIndex;
+            refreshOverlay();
+        }
+
+        return;
+    }
+
+    const dx = pos.x - startX;
+    const dy = pos.y - startY;
+    const r = regions[ activeRegionIndex ];
+    if ( ! r ) return;
+
+    if ( draggingState === 'create' ) {
+        r.x = dx < 0 ? pos.x : startX;
+        r.y = dy < 0 ? pos.y : startY;
+        r.w = Math.abs( dx );
+        r.h = Math.abs( dy );
+    } else if ( draggingState === 'move' ) {
+        r.x = initialRegionState.x + dx;
+        r.y = initialRegionState.y + dy;
+    } else if ( draggingState === 'resize-tl' ) {
+        r.x = initialRegionState.x + dx;
+        r.y = initialRegionState.y + dy;
+        r.w = initialRegionState.w - dx;
+        r.h = initialRegionState.h - dy;
+    } else if ( draggingState === 'resize-tr' ) {
+        r.y = initialRegionState.y + dy;
+        r.w = initialRegionState.w + dx;
+        r.h = initialRegionState.h - dy;
+    } else if ( draggingState === 'resize-bl' ) {
+        r.x = initialRegionState.x + dx;
+        r.w = initialRegionState.w - dx;
+        r.h = initialRegionState.h + dy;
+    } else if ( draggingState === 'resize-br' ) {
+        r.w = initialRegionState.w + dx;
+        r.h = initialRegionState.h + dy;
+    }
+
+    if ( draggingState.startsWith( 'resize' ) ) {
+        if ( r.w < MIN_SIZE ) {
+            r.w = MIN_SIZE;
+
+            if ( draggingState.includes( 'l' ) ) r.x = initialRegionState.x + initialRegionState.w - MIN_SIZE;
+        }
+        if ( r.h < MIN_SIZE ) {
+            r.h = MIN_SIZE;
+
+            if ( draggingState.includes( 't' ) ) r.y = initialRegionState.y + initialRegionState.h - MIN_SIZE;
+        }
     }
 
     refreshOverlay();

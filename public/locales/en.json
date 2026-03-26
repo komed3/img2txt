@@ -27,9 +27,8 @@
   "status_load_img": "Parsing Image …",
   "status_load_pdf": "Parsing PDF …",
   "status_render": "Rendering Page …",
-  "subtitle": "Precise text extraction from images and PDF documents",
   "tip_text": "Tip: Drag rectangles onto the document. Move, resize by dragging the edges, or delete them using the [Del] key. Hold down the [Ctrl] key to move the visible area. Use the [mouse wheel] to zoom.",
-  "title": "img2txt",
+  "title": "img2txt — Precise text extraction from images and PDF documents",
   "view_nav": "View",
   "wait_msg": "Extraction in progress. Please wait …",
   "zoom_reset": "Reset Zoom"

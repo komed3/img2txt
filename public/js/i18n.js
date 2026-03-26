@@ -19,7 +19,6 @@ export async function setLanguage ( lang ) {
     localStorage.setItem( 'img2txt-lang', lang );
 
     document.title = dict[ lang ].title || 'img2txt';
-    document.querySelector( 'meta[name="description"]' ).setAttribute( 'content', dict[ lang ].subtitle || '' );
 
     document.querySelectorAll( '[data-i18n]' ).forEach( el => {
         const key = el.getAttribute( 'data-i18n' );

@@ -285,3 +285,64 @@ function onMouseUp ( e ) {
 
     refreshOverlay();
 }
+
+function drawHandle ( x, y ) {
+    const sz = HANDLE_SIZE / ( baseScale * userZoom );
+    overCtx.fillStyle = '#fff';
+    overCtx.fillRect( x - sz / 2, y - sz / 2, sz, sz );
+    overCtx.lineWidth = 2 / ( baseScale * userZoom );
+    overCtx.strokeRect( x - sz / 2, y - sz / 2, sz, sz );
+}
+
+function refreshOverlay () {
+    overCtx.save();
+    overCtx.setTransform( 1, 0, 0, 1, 0, 0 );
+    overCtx.clearRect( 0, 0, overlayCanvas.width, overlayCanvas.height );
+    overCtx.translate( OVERLAY_PAD, OVERLAY_PAD ); 
+
+    const strokeW = 3 / ( baseScale * userZoom );
+    const fontSize = Math.max( 14, 20 / ( baseScale * userZoom ) );
+
+    regions.forEach( ( r, idx ) => {
+        const isActive = ( idx === activeRegionIndex );
+        const isHover = ( idx === hoverRegionIndex );
+
+        let strokeColor, fillColor;
+        if ( isActive ) {
+            strokeColor = 'rgba( 37 99 235 / 1 )';
+            fillColor = 'rgba( 37 99 235 / 0.15 )';
+        } else if ( isHover ) {
+            strokeColor = 'rgba( 15 76 129 / 0.9 )';
+            fillColor = 'rgba( 15 76 129 / 0.1 )';
+        } else {
+            strokeColor = 'rgba( 15 76 129 / 0.3 )';
+            fillColor = 'rgba( 15 76 129 / 0.03 )';
+        }
+
+        overCtx.strokeStyle = strokeColor;
+        overCtx.lineWidth = strokeW;
+        overCtx.fillStyle = fillColor;
+        overCtx.fillRect( r.x, r.y, r.w, r.h );
+        overCtx.strokeRect( r.x, r.y, r.w, r.h );
+
+        const badgeSz = fontSize * 1.5;
+        overCtx.fillStyle = isActive ? strokeColor : ( isHover ? strokeColor : 'rgba( 15 76 129 / 0.8 )' );
+        overCtx.fillRect( r.x, r.y, badgeSz, badgeSz );
+        overCtx.fillStyle = 'white';
+        overCtx.font = `bold ${fontSize}px Inter, sans-serif`;
+        overCtx.textAlign = 'center';
+        overCtx.textBaseline = 'middle';
+        overCtx.fillText( ( idx + 1 ).toString(), r.x + badgeSz / 2, r.y + badgeSz / 2 );
+
+        if ( isActive || isHover ) {
+            overCtx.strokeStyle = strokeColor;
+
+            drawHandle( r.x, r.y );
+            drawHandle( r.x + r.w, r.y );
+            drawHandle( r.x, r.y + r.h );
+            drawHandle( r.x + r.w, r.y + r.h );
+        }
+    } );
+
+    overCtx.restore();
+}

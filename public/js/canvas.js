@@ -257,3 +257,31 @@ function onMouseMove ( e ) {
 
     refreshOverlay();
 }
+
+function onMouseUp ( e ) {
+    if ( ! draggingState ) return;
+    if ( draggingState === 'pan' ) {
+        draggingState = null;
+        workspace.style.cursor = ( e && e.target && (
+            e.target === overlayCanvas ||
+            e.target === documentCanvas ||
+            e.target === wrapper
+        ) ) ? 'crosshair' : 'grab';
+
+        return;
+    }
+
+    if ( draggingState === 'create' ) {
+        const r = regions[ activeRegionIndex ];
+
+        if ( r && ( r.w < MIN_SIZE || r.h < MIN_SIZE ) ) {
+            regions.pop();
+            activeRegionIndex = -1;
+        }
+    }
+
+    draggingState = null;
+    initialRegionState = null;
+
+    refreshOverlay();
+}

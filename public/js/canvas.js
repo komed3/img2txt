@@ -98,3 +98,34 @@ export function cropRegionToBlob ( region ) {
 export function getDocumentBlob () {
     return new Promise ( resolve => documentCanvas.toBlob( resolve, 'image/png' ) );
 }
+
+// Interaction Logic
+
+function getMousePos ( e ) {
+    const rect = overlayCanvas.getBoundingClientRect();
+    const scaleX = overlayCanvas.width / rect.width;
+    const scaleY = overlayCanvas.height / rect.height;
+
+    return {
+        x: ( e.clientX - rect.left ) * scaleX - OVERLAY_PAD,
+        y: ( e.clientY - rect.top ) * scaleY - OVERLAY_PAD
+    };
+}
+
+function checkHit ( x, y ) {
+    for ( let i = regions.length - 1; i >= 0; i-- ) {
+        const r = regions[ i ];
+
+        if ( i === activeRegionIndex ) {
+            const hsz = ( HANDLE_SIZE * 2 ) / userZoom;
+            if ( Math.abs( x - r.x ) < hsz && Math.abs( y - r.y ) < hsz ) return { index: i, type: 'resize-tl' };
+            if ( Math.abs( x - ( r.x + r.w ) ) < hsz && Math.abs( y - r.y ) < hsz ) return { index: i, type: 'resize-tr' };
+            if ( Math.abs( x - r.x ) < hsz && Math.abs( y - ( r.y + r.h ) ) < hsz ) return { index: i, type: 'resize-bl' };
+            if ( Math.abs( x - ( r.x + r.w ) ) < hsz && Math.abs( y - ( r.y + r.h ) ) < hsz ) return { index: i, type: 'resize-br' };
+        }
+
+        if ( x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h ) return { index: i, type: 'move' };
+    }
+
+    return null;
+}

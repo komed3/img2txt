@@ -16,16 +16,21 @@ export class PdfRenderer {
     setupEvents () {
         const prevBtn = $( 'prevPageBtn' );
         const nextBtn = $( 'nextPageBtn' );
-        if ( prevBtn ) prevBtn.onclick = () => this.changePage( -1 );
-        if ( nextBtn ) nextBtn.onclick = () => this.changePage( 1 );
+        const prevBtnCanvas = $( 'prevPageBtnCanvas' );
+        const nextBtnCanvas = $( 'nextPageBtnCanvas' );
+
+        const prevAction = () => this.changePage( -1 );
+        const nextAction = () => this.changePage( 1 );
+
+        if ( prevBtn ) prevBtn.onclick = prevAction;
+        if ( nextBtn ) nextBtn.onclick = nextAction;
+        if ( prevBtnCanvas ) prevBtnCanvas.onclick = prevAction;
+        if ( nextBtnCanvas ) nextBtnCanvas.onclick = nextAction;
     }
 
     async load ( pdfData ) {
         this.pdfDoc = await pdfjsLib.getDocument( { data: pdfData } ).promise;
         this.pageNum = 1;
-
-        $( 'pageCount' ).textContent = this.pdfDoc.numPages;
-        $( 'pdfControls' ).classList.remove( 'hidden' );
 
         await this.renderPage( this.pageNum );
     }
@@ -39,15 +44,37 @@ export class PdfRenderer {
         const page = await this.pdfDoc.getPage( num );
         const viewport = page.getViewport( { scale: 2.0 } );
 
-        // We use the canvas from the workspace
-        const canvas = $( 'documentCanvas' );
-        const context = canvas.getContext( '2d' );
+        // Offscreen canvas for rotation source tracking
+        const offCanvas = document.createElement( 'canvas' );
+        offCanvas.width = viewport.width;
+        offCanvas.height = viewport.height;
+        const offCtx = offCanvas.getContext( '2d' );
 
-        this.workspace.setupCanvas( viewport.width, viewport.height );
-        await page.render( { canvasContext: context, viewport: viewport } ).promise;
+        await page.render( { canvasContext: offCtx, viewport: viewport } ).promise;
+
+        this.workspace.setupCanvas( viewport.width, viewport.height, offCanvas );
 
         this.pageNum = num;
-        $( 'pageNum' ).textContent = num;
+        const lbl1 = $( 'pageNum' );
+        const lbl2 = $( 'pageNumCanvas' );
+        const cnt1 = $( 'pageCount' );
+        const cnt2 = $( 'pageCountCanvas' );
+
+        if ( lbl1 ) lbl1.textContent = num;
+        if ( lbl2 ) lbl2.textContent = num;
+        if ( cnt1 ) cnt1.textContent = this.pdfDoc.numPages;
+        if ( cnt2 ) cnt2.textContent = this.pdfDoc.numPages;
+
+        const nav1 = $( 'pdfNavCanvas' );
+        const nav2 = $( 'pdfControls' );
+        if ( nav1 ) nav1.classList.toggle( 'hidden', this.pdfDoc.numPages <= 1 );
+        if ( nav2 ) nav2.classList.toggle( 'hidden', this.pdfDoc.numPages <= 1 );
+
+        const isAtStart = ( num === 1 );
+        const isAtEnd = ( num === this.pdfDoc.numPages );
+
+        [ $( 'prevPageBtn' ), $( 'prevPageBtnCanvas' ) ].forEach( b => { if ( b ) b.disabled = isAtStart } );
+        [ $( 'nextPageBtn' ), $( 'nextPageBtnCanvas' ) ].forEach( b => { if ( b ) b.disabled = isAtEnd } );
 
         this.isRendering = false;
         ui.hideLoader();

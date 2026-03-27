@@ -63,10 +63,15 @@ class ImageTextApp {
     }
 
     resetApp () {
-        $( 'fileInput' ).value = '';
-        $( 'resultText' ).value = '';
-        $( 'pdfControls' ).classList.add( 'hidden' );
+        const fileIn = $( 'fileInput' );
+        const resTxt = $( 'resultText' );
+        if ( fileIn ) fileIn.value = '';
+        if ( resTxt ) resTxt.value = '';
 
+        $( 'pdfControls' )?.classList.add( 'hidden' );
+        $( 'pdfNavCanvas' )?.classList.add( 'hidden' );
+
+        this.workspace.rotation = 0;
         const ctx = this.workspace.getDocContext();
         ctx.clearRect( 0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height );
         this.workspace.clearRegions();
@@ -93,15 +98,16 @@ class ImageTextApp {
             reader.readAsArrayBuffer( file );
         } else if ( file.type.startsWith( 'image/' ) ) {
             ui.showLoader( t( 'status_load_img' ), 250 );
-            $( 'pdfControls' ).classList.add( 'hidden' );
+
+            const pdfControls = $( 'pdfControls' );
+            if ( pdfControls ) pdfControls.classList.add( 'hidden' );
+
+            const pdfNav = $( 'pdfNavCanvas' );
+            if ( pdfNav ) pdfNav.classList.add( 'hidden' );
 
             const img = new Image ();
             img.onload = () => {
-                this.workspace.setupCanvas( img.width, img.height );
-                this.workspace.getDocContext().drawImage(
-                    img, 0, 0, img.width, img.height,
-                    0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height
-                );
+                this.workspace.setupCanvas( img.width, img.height, img );
 
                 ui.hideLoader();
                 ui.showStep( 2, () => this.workspace.resetZoom() );
@@ -127,6 +133,7 @@ class ImageTextApp {
             const duration = performance.now() - startTime;
 
             $( 'resultText' ).value = text;
+
             ui.calcStats( text, duration );
             ui.showStep( 3 );
         } catch ( err ) {
@@ -139,6 +146,6 @@ class ImageTextApp {
 
 }
 
-// Global start
+// Initialize App
 window.addEventListener( 'scroll', ( e ) => e.preventDefault(), { passive: false } );
 new ImageTextApp ();

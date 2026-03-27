@@ -62,6 +62,19 @@ class ImageTextApp {
         };
     }
 
+    resetApp () {
+        $( 'fileInput' ).value = '';
+        $( 'resultText' ).value = '';
+        $( 'pdfControls' ).classList.add( 'hidden' );
+
+        const ctx = this.workspace.getDocContext();
+        ctx.clearRect( 0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height );
+        this.workspace.clearRegions();
+        this.workspace.resetZoom();
+
+        ui.showStep( 1 );
+    }
+
     async handleFileSelect ( file ) {
         if ( ! file ) return;
 
@@ -98,17 +111,30 @@ class ImageTextApp {
         }
     }
 
-    resetApp () {
-        $( 'fileInput' ).value = '';
-        $( 'resultText' ).value = '';
-        $( 'pdfControls' ).classList.add( 'hidden' );
+    async performExtraction () {
+        ui.showLoader( t( 'processing' ) );
+        const startTime = performance.now();
 
-        const ctx = this.workspace.getDocContext();
-        ctx.clearRect( 0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height );
-        this.workspace.clearRegions();
-        this.workspace.resetZoom();
+        try {
+            const lang = $( 'languageSelect' ).value;
+            const regions = this.workspace.getRegions();
+            const blobs = [];
 
-        ui.showStep( 1 );
+            if ( regions.length === 0 ) blobs.push( await this.workspace.getDocumentBlob() );
+            else for ( const r of regions ) blobs.push( await this.workspace.cropRegionToBlob( r ) );
+
+            const text = await ocrEngine.process( blobs, lang );
+            const duration = performance.now() - startTime;
+
+            $( 'resultText' ).value = text;
+            ui.calcStats( text, duration );
+            ui.showStep( 3 );
+        } catch ( err ) {
+            console.error( err );
+            alert( t( 'err_fatal' ) + err.message );
+        } finally {
+            ui.hideLoader();
+        }
     }
 
 }

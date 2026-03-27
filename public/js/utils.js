@@ -1,3 +1,6 @@
+export const $ = ( id ) => document.getElementById( id );
+export const $$ = ( sel ) => document.querySelectorAll( sel );
+
 const loaderOverlay = document.getElementById( 'loaderOverlay' );
 const loaderText = document.getElementById( 'loaderText' );
 const toast = document.getElementById( 'toast' );

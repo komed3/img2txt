@@ -1,116 +1,144 @@
-import { docCtx, setupCanvas, clearRegions, resetZoom, cropRegionToBlob, getRegions, getDocumentBlob } from './canvas.js';
-import { initI18n, t } from './i18n.js';
-import { processOcr } from './ocr.js';
-import { loadPdf } from './pdf.js';
-import { showLoader, hideLoader, showStep, showToast, calcStats } from './utils.js';
+import { CanvasWorkspace } from './canvas.js';
+import { i18n, t } from './i18n.js';
+import { ocrEngine } from './ocr.js';
+import { PdfRenderer } from './pdf.js';
+import { ThemeManager } from './theme.js';
+import { ui } from './ui.js';
+import { $ } from './utils.js';
 
-await initI18n();
+class ImageTextApp {
 
-const fileInput = document.getElementById( 'fileInput' );
-const uploadZone = document.getElementById( 'uploadZone' );
-const languageSelect = document.getElementById( 'languageSelect' );
-const clearRegionsBtn = document.getElementById( 'clearRegionsBtn' );
-const extractBtn = document.getElementById( 'extractBtn' );
-const cancelBtn = document.getElementById( 'cancelBtn' );
-const restartBtn = document.getElementById( 'restartBtn' );
-const resultText = document.getElementById( 'resultText' );
-const copyBtn = document.getElementById( 'copyBtn' );
-const pdfControls = document.getElementById( 'pdfControls' );
+    constructor () {
+        this.theme = new ThemeManager ();
+        this.workspace = new CanvasWorkspace ();
+        this.pdf = new PdfRenderer ( this.workspace );
 
-languageSelect.value = localStorage.getItem( 'img2txt-ocr-lang' ) || 'eng';
-languageSelect.addEventListener( 'change', ( e ) => localStorage.setItem( 'img2txt-ocr-lang', e.target.value ) );
-
-uploadZone.addEventListener( 'dragover', ( e ) => { e.preventDefault(), uploadZone.classList.add( 'dragover' ) } );
-uploadZone.addEventListener( 'dragleave', () => uploadZone.classList.remove( 'dragover' ) );
-uploadZone.addEventListener( 'drop', ( e ) => {
-    e.preventDefault(), uploadZone.classList.remove( 'dragover' );
-
-    if ( e.dataTransfer.files && e.dataTransfer.files[ 0 ] ) {
-        fileInput.files = e.dataTransfer.files;
-        handleFileSelect( { target: fileInput } );
+        this.init();
     }
-} );
 
-uploadZone.addEventListener( 'click', ( e ) => { if( e.target !== fileInput ) fileInput.click() } );
-fileInput.addEventListener( 'change', handleFileSelect );
+    async init () {
+        await i18n.init();
+        this.setupEvents();
 
-clearRegionsBtn.addEventListener( 'click', clearRegions );
-cancelBtn.addEventListener( 'click', resetApp );
-restartBtn.addEventListener( 'click', resetApp );
-
-copyBtn.addEventListener( 'click', () => {
-    if ( ! resultText.value ) return;
-    navigator.clipboard.writeText( resultText.value ).then( () => showToast( t( 'copy_done' ) ) );
-} );
-
-extractBtn.addEventListener( 'click', async () => {
-    showLoader( t( 'processing' ) );
-    const startTime = performance.now();
-
-    try {
-        const lang = languageSelect.value;
-        const regions = getRegions();
-        const blobs = [];
-
-        if ( regions.length === 0 ) blobs.push( await getDocumentBlob() );
-        else for ( const r of regions ) blobs.push( await cropRegionToBlob( r ) );
-
-        const text = await processOcr( blobs, lang );
-        const duration = performance.now() - startTime;
-
-        resultText.value = text;
-        calcStats( text, duration );
-        showStep( 3 );
-    } catch ( err ) {
-        console.error( err );
-        alert( t( 'err_fatal' ) + err.message );
-    } finally {
-        hideLoader();
+        // Persistence
+        $( 'languageSelect' ).value = localStorage.getItem( 'img2txt-ocr-lang' ) || 'eng';
+        $( 'languageSelect' ).onchange = ( e ) => localStorage.setItem( 'img2txt-ocr-lang', e.target.value );
     }
-} );
 
-function resetApp () {
-    fileInput.value = '';
-    resultText.value = '';
+    setupEvents () {
+        // Upload
+        const uploadZone = $( 'uploadZone' );
+        const fileInput = $( 'fileInput' );
 
-    const docCanvas = document.getElementById( 'documentCanvas' );
-    docCtx.clearRect( 0, 0, docCanvas.width, docCanvas.height );
+        uploadZone.ondragover = ( e ) => { e.preventDefault(), uploadZone.classList.add( 'dragover' ) };
+        uploadZone.ondragleave = () => uploadZone.classList.remove( 'dragover' );
+        uploadZone.onclick = ( e ) => { if ( e.target !== fileInput ) fileInput.click() };
+        fileInput.onchange = ( e ) => this.handleFileSelect( e.target.files[ 0 ] );
 
-    clearRegions();
-    resetZoom();
-    showStep( 1 );
+        uploadZone.ondrop = ( e ) => {
+            e.preventDefault();
 
-    pdfControls.classList.add( 'hidden' );
+            uploadZone.classList.remove( 'dragover' );
+
+            if ( e.dataTransfer.files?.[ 0 ] ) {
+                fileInput.files = e.dataTransfer.files;
+                this.handleFileSelect( fileInput.files[ 0 ] );
+            }
+        };
+
+        // Actions
+        $( 'clearRegionsBtn' ).onclick = () => this.workspace.clearRegions();
+        $( 'cancelBtn' ).onclick = () => this.resetApp();
+        $( 'restartBtn' ).onclick = () => this.resetApp();
+        $( 'extractBtn' ).onclick = () => this.performExtraction();
+
+        $( 'copyBtn' ).onclick = () => {
+            const text = $( 'resultText' ).value;
+            if ( ! text ) return;
+
+            navigator.clipboard.writeText( text ).then(
+                () => ui.showToast( t( 'copy_done' ) )
+            );
+        };
+    }
+
+    resetApp () {
+        $( 'fileInput' ).value = '';
+        $( 'resultText' ).value = '';
+        $( 'pdfControls' ).classList.add( 'hidden' );
+
+        const ctx = this.workspace.getDocContext();
+        ctx.clearRect( 0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height );
+        this.workspace.clearRegions();
+        this.workspace.resetZoom();
+
+        ui.showStep( 1 );
+    }
+
+    async handleFileSelect ( file ) {
+        if ( ! file ) return;
+
+        this.workspace.clearRegions();
+        this.workspace.resetZoom();
+
+        if ( file.type === 'application/pdf' ) {
+            ui.showLoader( t( 'status_load_pdf' ), 250 );
+
+            const reader = new FileReader ();
+            reader.onload = async ( e ) => {
+                await this.pdf.load( e.target.result );
+                ui.showStep( 2, () => this.workspace.resetZoom() );
+            };
+
+            reader.readAsArrayBuffer( file );
+        } else if ( file.type.startsWith( 'image/' ) ) {
+            ui.showLoader( t( 'status_load_img' ), 250 );
+            $( 'pdfControls' ).classList.add( 'hidden' );
+
+            const img = new Image ();
+            img.onload = () => {
+                this.workspace.setupCanvas( img.width, img.height );
+                this.workspace.getDocContext().drawImage(
+                    img, 0, 0, img.width, img.height,
+                    0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height
+                );
+
+                ui.hideLoader();
+                ui.showStep( 2, () => this.workspace.resetZoom() );
+            };
+
+            img.src = URL.createObjectURL( file );
+        }
+    }
+
+    async performExtraction () {
+        ui.showLoader( t( 'processing' ) );
+        const startTime = performance.now();
+
+        try {
+            const lang = $( 'languageSelect' ).value;
+            const regions = this.workspace.getRegions();
+            const blobs = [];
+
+            if ( regions.length === 0 ) blobs.push( await this.workspace.getDocumentBlob() );
+            else for ( const r of regions ) blobs.push( await this.workspace.cropRegionToBlob( r ) );
+
+            const text = await ocrEngine.process( blobs, lang );
+            const duration = performance.now() - startTime;
+
+            $( 'resultText' ).value = text;
+            ui.calcStats( text, duration );
+            ui.showStep( 3 );
+        } catch ( err ) {
+            console.error( err );
+            alert( t( 'err_fatal' ) + err.message );
+        } finally {
+            ui.hideLoader();
+        }
+    }
+
 }
 
-async function handleFileSelect ( e ) {
-    const file = e.target.files[ 0 ];
-    if ( ! file ) return;
-
-    clearRegions();
-    resetZoom();
-
-    if ( file.type === 'application/pdf' ) {
-        showLoader( t( 'status_load_pdf' ), 150 );
-
-        const fileReader = new FileReader();
-        fileReader.onload = async function () {
-            await loadPdf( this.result );
-            hideLoader();
-            showStep( 2, () => resetZoom() );
-        };
-        fileReader.readAsArrayBuffer( file );
-    } else if ( file.type.startsWith( 'image/' ) ) {
-        showLoader( t( 'status_load_img' ), 150 );
-        pdfControls.classList.add( 'hidden' );
-
-        const img = new Image();
-        img.onload = () => {
-            setupCanvas( img.width, img.height );
-            docCtx.drawImage( img, 0, 0 );
-            hideLoader();
-            showStep( 2, () => resetZoom() );
-        };
-        img.src = URL.createObjectURL( file );
-    }
-}
+// Global start
+window.addEventListener( 'scroll', ( e ) => e.preventDefault(), { passive: false } );
+new ImageTextApp ();

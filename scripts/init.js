@@ -47,7 +47,7 @@ const downloadFile = ( url, dest ) => new Promise( ( resolve, reject ) => {
 const init = async () => {
     console.log( 'Initializing Tesseract/PDF bundles and languages ...' );
     makeDir();
-    
+
     for ( const { url, dest } of urls ) {
         console.log( `Downloading ${url}...` );
         await downloadFile( url, dest );

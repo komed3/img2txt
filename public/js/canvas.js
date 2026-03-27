@@ -1,414 +1,454 @@
-export const documentCanvas = document.getElementById( 'documentCanvas' );
-export const docCtx = documentCanvas.getContext( '2d' );
+import { $ } from './utils.js';
 
-const overlayCanvas = document.getElementById( 'overlayCanvas' );
-const overCtx = overlayCanvas.getContext( '2d' );
-const wrapper = document.getElementById( 'canvasWrapper' );
-const workspace = document.getElementById( 'workspace' );
-const zoomLevelDisplay = document.getElementById( 'zoomLevelDisplay' );
-const zoomInBtn = document.getElementById( 'zoomInBtn' );
-const zoomOutBtn = document.getElementById( 'zoomOutBtn' );
-const zoomResetBtn = document.getElementById( 'zoomResetBtn' );
+export class CanvasWorkspace {
 
-let currentImageWidth = 0;
-let currentImageHeight = 0;
-let baseScale = 1;
-let userZoom = 1;
-let panX = 0;
-let panY = 0;
+    constructor () {
+        this.docCanvas = $( 'documentCanvas' );
+        this.docCtx = this.docCanvas.getContext( '2d' );
+        this.overCanvas = $( 'overlayCanvas' );
+        this.overCtx = this.overCanvas.getContext( '2d' );
+        this.wrapper = $( 'canvasWrapper' );
+        this.workspace = $( 'workspace' );
 
-let regions = [];
-let draggingState = null;
-let activeRegionIndex = -1;
-let hoverRegionIndex = -1;
-let startX = 0, startY = 0;
-let initialRegionState = null;
+        this.currentImageWidth = 0;
+        this.currentImageHeight = 0;
 
-const OVERLAY_PAD = 2000;
-const HANDLE_SIZE = 8;
-const MIN_SIZE = 15;
+        // Virtual sizing for hardware limit protection (20k fix)
+        this.renderScale = 1.0;
+        this.MAX_CANVAS_DIM = 4096;
 
-export function getRegions () { return regions }
+        this.baseScale = 1;
+        this.userZoom = 1;
+        this.panX = 0;
+        this.panY = 0;
 
-export function setupCanvas ( width, height ) {
-    currentImageWidth = width;
-    currentImageHeight = height;
+        this.regions = [];
+        this.draggingState = null;
+        this.activeRegionIndex = -1;
+        this.hoverRegionIndex = -1;
+        this.startX = 0;
+        this.startY = 0;
 
-    documentCanvas.width = width;
-    documentCanvas.height = height;
+        this.OVERLAY_PAD = 2000;
+        this.HANDLE_SIZE = 8;
+        this.MIN_SIZE = 15;
 
-    overlayCanvas.width = width + OVERLAY_PAD * 2;
-    overlayCanvas.height = height + OVERLAY_PAD * 2;
-    overlayCanvas.style.left = -OVERLAY_PAD + 'px';
-    overlayCanvas.style.top = -OVERLAY_PAD + 'px';
+        this.init();
+    }
 
-    resetZoom();
-}
+    init () {
+        $( 'zoomInBtn' ).onclick = () => this.zoomBtn( 0.2 );
+        $( 'zoomOutBtn' ).onclick = () => this.zoomBtn( -0.2 );
+        $( 'zoomResetBtn' ).onclick = () => this.resetZoom();
 
-function calculateBaseScale () {
-    if ( ! currentImageWidth ) return;
+        this.workspace.onwheel = ( e ) => this.handleWheel( e );
+        this.workspace.onmousedown = ( e ) => this.onMouseDown( e );
+        window.onmousemove = ( e ) => this.onMouseMove( e );
+        window.onmouseup = ( e ) => this.onMouseUp( e );
+        window.onresize = () => this.resetZoom();
 
-    const parentW = workspace.clientWidth - 40;
-    const parentH = workspace.clientHeight - 40;
-    baseScale = Math.min( ( parentW / currentImageWidth ), ( parentH / currentImageHeight ), 1 );
+        this.overCanvas.onkeydown = ( e ) => this.handleKeys( e );
 
-    const scaledW = currentImageWidth * baseScale * userZoom;
-    const scaledH = currentImageHeight * baseScale * userZoom;
-    panX = ( workspace.clientWidth - scaledW ) / 2;
-    panY = ( workspace.clientHeight - scaledH ) / 2;
-}
+        // Block middle click autoscroll
+        document.addEventListener( 'mousedown', ( e ) => {
+            if ( e.button === 1 ) e.preventDefault();
+        }, { passive: false } );
+    }
 
-function applyZoom () {
-    if ( ! currentImageWidth ) return;
+    getRegions () {
+        return this.regions;
+    }
 
-    wrapper.style.width = currentImageWidth + 'px';
-    wrapper.style.height = currentImageHeight + 'px';
+    setupCanvas ( width, height ) {
+        this.currentImageWidth = width;
+        this.currentImageHeight = height;
 
-    const currentScale = baseScale * userZoom;
-    wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${currentScale})`;
-    zoomLevelDisplay.textContent = Math.round( userZoom * 100 ) + '%';
-}
+        // Protection against hardware canvas limits (e.g. 20.000px)
+        this.renderScale = 1.0;
+        if ( width > this.MAX_CANVAS_DIM || height > this.MAX_CANVAS_DIM ) {
+            this.renderScale = Math.min( this.MAX_CANVAS_DIM / width, this.MAX_CANVAS_DIM / height );
+        }
 
-export function resetZoom () {
-    userZoom = 1;
-    calculateBaseScale();
-    applyZoom();
-}
+        const virtualW = width * this.renderScale;
+        const virtualH = height * this.renderScale;
 
-export function clearRegions () {
-    regions = [];
-    activeRegionIndex = -1;
-    refreshOverlay();
-}
+        this.docCanvas.width = virtualW;
+        this.docCanvas.height = virtualH;
 
-export function cropRegionToBlob ( region ) {
-    return new Promise ( ( resolve ) => {
+        this.overCanvas.width = virtualW + this.OVERLAY_PAD * 2;
+        this.overCanvas.height = virtualH + this.OVERLAY_PAD * 2;
+        this.overCanvas.style.left = -this.OVERLAY_PAD + 'px';
+        this.overCanvas.style.top = -this.OVERLAY_PAD + 'px';
+
+        this.resetZoom();
+    }
+
+    calculateBaseScale () {
+        if ( ! this.currentImageWidth ) return;
+
+        const parentW = this.workspace.clientWidth - 40;
+        const parentH = this.workspace.clientHeight - 40;
+        const virtualW = this.currentImageWidth * this.renderScale;
+        const virtualH = this.currentImageHeight * this.renderScale;
+
+        this.baseScale = Math.min( ( parentW / virtualW ), ( parentH / virtualH ), 1 );
+
+        const scaledW = virtualW * this.baseScale * this.userZoom;
+        const scaledH = virtualH * this.baseScale * this.userZoom;
+
+        this.panX = ( this.workspace.clientWidth - scaledW ) / 2;
+        this.panY = ( this.workspace.clientHeight - scaledH ) / 2;
+    }
+
+    applyZoom () {
+        if ( ! this.currentImageWidth ) return;
+
+        const virtualW = this.currentImageWidth * this.renderScale;
+        const virtualH = this.currentImageHeight * this.renderScale;
+
+        this.wrapper.style.width = virtualW + 'px';
+        this.wrapper.style.height = virtualH + 'px';
+
+        const currentScale = this.baseScale * this.userZoom;
+
+        this.wrapper.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${currentScale})`;
+        $( 'zoomLevelDisplay' ).textContent = Math.round( this.userZoom * 100 ) + '%';
+    }
+
+    resetZoom () {
+        this.userZoom = 1;
+        this.calculateBaseScale();
+        this.applyZoom();
+    }
+
+    clearRegions () {
+        this.regions = [];
+        this.activeRegionIndex = -1;
+        this.refreshOverlay();
+    }
+
+    getDocContext () {
+        return this.docCtx;
+    }
+
+    getScaleRatio () {
+        return this.renderScale;
+    }
+
+    async cropRegionToBlob ( region ) {
+        // We crop from the Virtual Canvas but using Original Ratios
         const tempCanvas = document.createElement( 'canvas' );
-        tempCanvas.width = region.w;
-        tempCanvas.height = region.h;
+        tempCanvas.width = region.w / this.renderScale;
+        tempCanvas.height = region.h / this.renderScale;
 
         const tempCtx = tempCanvas.getContext( '2d' );
         tempCtx.fillStyle = 'white';
-        tempCtx.fillRect( 0, 0, region.w, region.h );
-        tempCtx.drawImage( documentCanvas, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h );
-        tempCanvas.toBlob( ( blob ) => resolve( blob ), 'image/png' );
-    } );
-}
+        tempCtx.fillRect( 0, 0, tempCanvas.width, tempCanvas.height );
 
-export function getDocumentBlob () {
-    return new Promise ( resolve => documentCanvas.toBlob( resolve, 'image/png' ) );
-}
+        // Draw from scaled source to full size destination
+        tempCtx.drawImage(
+            this.docCanvas, region.x, region.y, region.w, region.h,
+            0, 0, tempCanvas.width, tempCanvas.height
+        );
 
-// Interaction Logic
+        return new Promise ( res => tempCanvas.toBlob( res, 'image/png' ) );
+    }
 
-function getMousePos ( e ) {
-    const rect = overlayCanvas.getBoundingClientRect();
-    const scaleX = overlayCanvas.width / rect.width;
-    const scaleY = overlayCanvas.height / rect.height;
+    async getDocumentBlob () {
+        // If we downscaled, we might want the original, but for OCR 4096px is usually plenty.
+        // Let's return the docCanvas blob.
+        return new Promise ( res => this.docCanvas.toBlob( res, 'image/png' ) );
+    }
 
-    return {
-        x: ( e.clientX - rect.left ) * scaleX - OVERLAY_PAD,
-        y: ( e.clientY - rect.top ) * scaleY - OVERLAY_PAD
-    };
-}
+    getMousePos ( e ) {
+        const rect = this.overCanvas.getBoundingClientRect();
+        const scaleX = this.overCanvas.width / rect.width;
+        const scaleY = this.overCanvas.height / rect.height;
 
-function checkHit ( x, y ) {
-    for ( let i = regions.length - 1; i >= 0; i-- ) {
-        const r = regions[ i ];
+        return {
+            x: ( e.clientX - rect.left ) * scaleX - this.OVERLAY_PAD,
+            y: ( e.clientY - rect.top ) * scaleY - this.OVERLAY_PAD
+        };
+    }
 
-        if ( i === activeRegionIndex ) {
-            const hsz = ( HANDLE_SIZE * 2 ) / userZoom;
-            if ( Math.abs( x - r.x ) < hsz && Math.abs( y - r.y ) < hsz ) return { index: i, type: 'resize-tl' };
-            if ( Math.abs( x - ( r.x + r.w ) ) < hsz && Math.abs( y - r.y ) < hsz ) return { index: i, type: 'resize-tr' };
-            if ( Math.abs( x - r.x ) < hsz && Math.abs( y - ( r.y + r.h ) ) < hsz ) return { index: i, type: 'resize-bl' };
-            if ( Math.abs( x - ( r.x + r.w ) ) < hsz && Math.abs( y - ( r.y + r.h ) ) < hsz ) return { index: i, type: 'resize-br' };
+    checkHit ( x, y ) {
+        for ( let i = this.regions.length - 1; i >= 0; i-- ) {
+            const r = this.regions[ i ];
+
+            if ( i === this.activeRegionIndex ) {
+                const hsz = ( this.HANDLE_SIZE * 2 ) / this.userZoom;
+                const corners = [
+                    { x: r.x, y: r.y, type: 'resize-tl' },
+                    { x: r.x + r.w, y: r.y, type: 'resize-tr' },
+                    { x: r.x, y: r.y + r.h, type: 'resize-bl' },
+                    { x: r.x + r.w, y: r.y + r.h, type: 'resize-br' }
+                ];
+
+                for ( let { x: cx, y: cy, type } of corners ) {
+                    if ( Math.abs( x - cx ) < hsz && Math.abs( y - cy ) < hsz ) return { index: i, type };
+                }
+            }
+
+            if ( x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h ) return { index: i, type: 'move' };
         }
 
-        if ( x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h ) return { index: i, type: 'move' };
+        return null;
     }
 
-    return null;
-}
+    onMouseDown ( e ) {
+        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
+        if ( e.target.closest( '.zoom-overlay' ) || e.target.closest( '.pagination' ) ) return;
 
-function onMouseDown ( e ) {
-    if ( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
-    if ( e.target.closest( '.zoom-overlay' ) || e.target.closest( '.pagination' ) ) return;
+        if ( e.ctrlKey || e.button === 1 ) {
+            e.preventDefault();
 
-    if ( e.ctrlKey || e.button === 1 ) {
-        e.preventDefault(); 
+            this.draggingState = 'pan';
+            this.startX = e.clientX;
+            this.startY = e.clientY;
+            this.workspace.style.cursor = 'grabbing';
 
-        draggingState = 'pan';
-        startX = e.clientX;
-        startY = e.clientY;
-        workspace.style.cursor = 'grabbing';
-
-        return;
-    }
-
-    overlayCanvas.focus();
-
-    const pos = getMousePos( e );
-    startX = pos.x;
-    startY = pos.y;
-
-    const hit = checkHit( pos.x, pos.y );
-    if ( hit ) {
-        activeRegionIndex = hit.index;
-        draggingState = hit.type;
-        initialRegionState = { ...regions[ activeRegionIndex ] };
-    } else {
-        draggingState = 'create';
-        activeRegionIndex = regions.length;
-        regions.push( { x: startX, y: startY, w: 0, h: 0 } );
-    }
-
-    refreshOverlay();
-}
-
-function onMouseMove ( e ) {
-    if ( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
-
-    if ( draggingState === 'pan' ) {
-        panX += e.clientX - startX;
-        panY += e.clientY - startY;
-        startX = e.clientX;
-        startY = e.clientY;
-        workspace.style.cursor = 'grabbing';
-
-        applyZoom();
-
-        return;
-    }
-
-    const pos = getMousePos( e );
-
-    if ( ! draggingState ) {
-        if ( e.ctrlKey ) {
-            workspace.style.cursor = 'grab';
             return;
         }
 
-        let newHoverIndex = -1;
-        const hit = checkHit( pos.x, pos.y );
+        this.overCanvas.focus();
+        const pos = this.getMousePos( e );
+        const hit = this.checkHit( pos.x, pos.y );
+        this.startX = pos.x;
+        this.startY = pos.y;
 
-        if ( e.target === overlayCanvas || e.target === documentCanvas || e.target === wrapper ) {
-            if ( hit ) {
-                newHoverIndex = hit.index;
-
-                if ( hit.type.startsWith( 'resize-tl' ) || hit.type.startsWith( 'resize-br' ) ) workspace.style.cursor = 'nwse-resize';
-                else if ( hit.type.startsWith( 'resize-tr' ) || hit.type.startsWith( 'resize-bl' ) ) workspace.style.cursor = 'nesw-resize';
-                else workspace.style.cursor = 'move';
-            }
-            else workspace.style.cursor = 'crosshair';
-        }
-        else workspace.style.cursor = 'grab';
-
-        if ( newHoverIndex !== hoverRegionIndex ) {
-            hoverRegionIndex = newHoverIndex;
-            refreshOverlay();
-        }
-
-        return;
-    }
-
-    const dx = pos.x - startX;
-    const dy = pos.y - startY;
-    const r = regions[ activeRegionIndex ];
-    if ( ! r ) return;
-
-    if ( draggingState === 'create' ) {
-        r.x = dx < 0 ? pos.x : startX;
-        r.y = dy < 0 ? pos.y : startY;
-        r.w = Math.abs( dx );
-        r.h = Math.abs( dy );
-    } else if ( draggingState === 'move' ) {
-        r.x = initialRegionState.x + dx;
-        r.y = initialRegionState.y + dy;
-    } else if ( draggingState === 'resize-tl' ) {
-        r.x = initialRegionState.x + dx;
-        r.y = initialRegionState.y + dy;
-        r.w = initialRegionState.w - dx;
-        r.h = initialRegionState.h - dy;
-    } else if ( draggingState === 'resize-tr' ) {
-        r.y = initialRegionState.y + dy;
-        r.w = initialRegionState.w + dx;
-        r.h = initialRegionState.h - dy;
-    } else if ( draggingState === 'resize-bl' ) {
-        r.x = initialRegionState.x + dx;
-        r.w = initialRegionState.w - dx;
-        r.h = initialRegionState.h + dy;
-    } else if ( draggingState === 'resize-br' ) {
-        r.w = initialRegionState.w + dx;
-        r.h = initialRegionState.h + dy;
-    }
-
-    if ( draggingState.startsWith( 'resize' ) ) {
-        if ( r.w < MIN_SIZE ) {
-            r.w = MIN_SIZE;
-
-            if ( draggingState.includes( 'l' ) ) r.x = initialRegionState.x + initialRegionState.w - MIN_SIZE;
-        }
-        if ( r.h < MIN_SIZE ) {
-            r.h = MIN_SIZE;
-
-            if ( draggingState.includes( 't' ) ) r.y = initialRegionState.y + initialRegionState.h - MIN_SIZE;
-        }
-    }
-
-    refreshOverlay();
-}
-
-function onMouseUp ( e ) {
-    if ( ! draggingState ) return;
-    if ( draggingState === 'pan' ) {
-        draggingState = null;
-        workspace.style.cursor = ( e && e.target && (
-            e.target === overlayCanvas ||
-            e.target === documentCanvas ||
-            e.target === wrapper
-        ) ) ? 'crosshair' : 'grab';
-
-        return;
-    }
-
-    if ( draggingState === 'create' ) {
-        const r = regions[ activeRegionIndex ];
-
-        if ( r && ( r.w < MIN_SIZE || r.h < MIN_SIZE ) ) {
-            regions.pop();
-            activeRegionIndex = -1;
-        }
-    }
-
-    draggingState = null;
-    initialRegionState = null;
-
-    refreshOverlay();
-}
-
-function drawHandle ( x, y ) {
-    const sz = HANDLE_SIZE / ( baseScale * userZoom );
-    overCtx.fillStyle = '#fff';
-    overCtx.fillRect( x - sz / 2, y - sz / 2, sz, sz );
-    overCtx.lineWidth = 2 / ( baseScale * userZoom );
-    overCtx.strokeRect( x - sz / 2, y - sz / 2, sz, sz );
-}
-
-function refreshOverlay () {
-    overCtx.save();
-    overCtx.setTransform( 1, 0, 0, 1, 0, 0 );
-    overCtx.clearRect( 0, 0, overlayCanvas.width, overlayCanvas.height );
-    overCtx.translate( OVERLAY_PAD, OVERLAY_PAD ); 
-
-    const strokeW = 3 / ( baseScale * userZoom );
-    const fontSize = Math.max( 14, 20 / ( baseScale * userZoom ) );
-
-    regions.forEach( ( r, idx ) => {
-        const isActive = ( idx === activeRegionIndex );
-        const isHover = ( idx === hoverRegionIndex );
-
-        let strokeColor, fillColor;
-        if ( isActive ) {
-            strokeColor = 'rgba( 37 99 235 / 1 )';
-            fillColor = 'rgba( 37 99 235 / 0.15 )';
-        } else if ( isHover ) {
-            strokeColor = 'rgba( 15 76 129 / 0.9 )';
-            fillColor = 'rgba( 15 76 129 / 0.1 )';
+        if ( hit ) {
+            this.activeRegionIndex = hit.index;
+            this.draggingState = hit.type;
+            this.initialRegionState = { ...this.regions[ this.activeRegionIndex ] };
         } else {
-            strokeColor = 'rgba( 15 76 129 / 0.3 )';
-            fillColor = 'rgba( 15 76 129 / 0.03 )';
+            this.draggingState = 'create';
+            this.activeRegionIndex = this.regions.length;
+            this.regions.push( { x: this.startX, y: this.startY, w: 0, h: 0 } );
         }
 
-        overCtx.strokeStyle = strokeColor;
-        overCtx.lineWidth = strokeW;
-        overCtx.fillStyle = fillColor;
-        overCtx.fillRect( r.x, r.y, r.w, r.h );
-        overCtx.strokeRect( r.x, r.y, r.w, r.h );
+        this.refreshOverlay();
+    }
 
-        const badgeSz = fontSize * 1.5;
-        overCtx.fillStyle = isActive ? strokeColor : ( isHover ? strokeColor : 'rgba( 15 76 129 / 0.8 )' );
-        overCtx.fillRect( r.x, r.y, badgeSz, badgeSz );
-        overCtx.fillStyle = 'white';
-        overCtx.font = `bold ${fontSize}px Inter, sans-serif`;
-        overCtx.textAlign = 'center';
-        overCtx.textBaseline = 'middle';
-        overCtx.fillText( ( idx + 1 ).toString(), r.x + badgeSz / 2, r.y + badgeSz / 2 );
+    onMouseMove ( e ) {
+        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
 
-        if ( isActive || isHover ) {
-            overCtx.strokeStyle = strokeColor;
+        if ( this.draggingState === 'pan' ) {
+            this.panX += e.clientX - this.startX;
+            this.panY += e.clientY - this.startY;
+            this.startX = e.clientX;
+            this.startY = e.clientY;
 
-            drawHandle( r.x, r.y );
-            drawHandle( r.x + r.w, r.y );
-            drawHandle( r.x, r.y + r.h );
-            drawHandle( r.x + r.w, r.y + r.h );
+            this.applyZoom();
+            this.workspace.style.cursor = 'grabbing';
+
+            return;
         }
-    } );
 
-    overCtx.restore();
-}
+        const pos = this.getMousePos( e );
 
-// Binds
+        if ( ! this.draggingState ) {
+            if ( e.ctrlKey ) { this.workspace.style.cursor = 'grab'; return; }
 
-function zoomBtn ( delta ) {
-    const newZoom = Math.max( 0.2, Math.min( 5, userZoom + delta ) );
+            const hit = this.checkHit( pos.x, pos.y );
+            let newHoverIndex = -1;
 
-    if ( newZoom !== userZoom ) {
-        const oldScale = baseScale * userZoom;
-        const newScale = baseScale * newZoom;
-        userZoom = newZoom;
+            if ( e.target === this.overCanvas || e.target === this.docCanvas || e.target === this.wrapper ) {
+                if ( hit ) {
+                    newHoverIndex = hit.index;
 
-        const centerX = workspace.clientWidth / 2;
-        const centerY = workspace.clientHeight / 2;
-        panX = centerX - ( ( centerX - panX ) / oldScale ) * newScale;
-        panY = centerY - ( ( centerY - panY ) / oldScale ) * newScale;
+                    if ( hit.type.startsWith( 'resize-tl' ) || hit.type.startsWith( 'resize-br' ) ) this.workspace.style.cursor = 'nwse-resize';
+                    else if ( hit.type.startsWith( 'resize-tr' ) || hit.type.startsWith( 'resize-bl' ) ) this.workspace.style.cursor = 'nesw-resize';
+                    else this.workspace.style.cursor = 'move';
+                } else {
+                    this.workspace.style.cursor = 'crosshair';
+                }
+            } else {
+                this.workspace.style.cursor = 'default';
+            }
 
-        applyZoom();
+            if ( newHoverIndex !== this.hoverRegionIndex ) {
+                this.hoverRegionIndex = newHoverIndex;
+                this.refreshOverlay();
+            }
+
+            return;
+        }
+
+        const dx = pos.x - this.startX;
+        const dy = pos.y - this.startY;
+        const r = this.regions[ this.activeRegionIndex ];
+        if ( ! r ) return;
+
+        switch ( this.draggingState ) {
+            case 'create':
+                r.x = dx < 0 ? pos.x : this.startX;
+                r.y = dy < 0 ? pos.y : this.startY;
+                r.w = Math.abs( dx );
+                r.h = Math.abs( dy );
+                break;
+            case 'move':
+                r.x = this.initialRegionState.x + dx;
+                r.y = this.initialRegionState.y + dy;
+                break;
+            case 'resize-tl':
+                r.x = this.initialRegionState.x + dx;
+                r.y = this.initialRegionState.y + dy;
+                r.w = this.initialRegionState.w - dx;
+                r.h = this.initialRegionState.h - dy;
+                break;
+            case 'resize-tr':
+                r.y = this.initialRegionState.y + dy;
+                r.w = this.initialRegionState.w + dx;
+                r.h = this.initialRegionState.h - dy;
+                break;
+            case 'resize-bl':
+                r.x = this.initialRegionState.x + dx;
+                r.w = this.initialRegionState.w - dx;
+                r.h = this.initialRegionState.h + dy;
+                break;
+            case 'resize-br':
+                r.w = this.initialRegionState.w + dx;
+                r.h = this.initialRegionState.h + dy;
+                break;
+        }
+
+        if ( this.draggingState.startsWith( 'resize' ) ) {
+            if ( r.w < this.MIN_SIZE ) {
+                r.w = this.MIN_SIZE;
+
+                if ( this.draggingState.includes( 'l' ) ) r.x = this.initialRegionState.x + this.initialRegionState.w - this.MIN_SIZE;
+            }
+
+            if ( r.h < this.MIN_SIZE ) {
+                r.h = this.MIN_SIZE;
+
+                if ( this.draggingState.includes( 't' ) ) r.y = this.initialRegionState.y + this.initialRegionState.h - this.MIN_SIZE;
+            }
+        }
+
+        this.refreshOverlay();
     }
-}
 
-zoomInBtn.addEventListener( 'click', () => zoomBtn( 0.2 ) );
-zoomOutBtn.addEventListener( 'click', () => zoomBtn( -0.2 ) );
-zoomResetBtn.addEventListener( 'click', resetZoom );
+    onMouseUp () {
+        if ( ! this.draggingState ) return;
 
-workspace.addEventListener( 'wheel', ( e ) => {
-    if ( document.getElementById( 'step2' ).classList.contains( 'active-step' ) === false ) return;
-    e.preventDefault();
+        if ( this.draggingState === 'pan' ) {
+            this.draggingState = null;
+            this.workspace.style.cursor = 'default';
 
-    const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
-    const newZoom = Math.max( 0.2, Math.min( 5, userZoom + zoomDelta ) );
+            return;
+        }
 
-    if ( newZoom !== userZoom ) {
-        const oldScale = baseScale * userZoom;
-        const newScale = baseScale * newZoom;
-        userZoom = newZoom;
+        if ( this.draggingState === 'create' ) {
+            const r = this.regions[ this.activeRegionIndex ];
 
-        const workRect = workspace.getBoundingClientRect();
-        const mouseX = e.clientX - workRect.left;
-        const mouseY = e.clientY - workRect.top;
-        panX = mouseX - ( ( mouseX - panX ) / oldScale ) * newScale;
-        panY = mouseY - ( ( mouseY - panY ) / oldScale ) * newScale;
+            if ( r && ( r.w < this.MIN_SIZE || r.h < this.MIN_SIZE ) ) {
+                this.regions.pop();
+                this.activeRegionIndex = -1;
+            }
+        }
 
-        applyZoom();
+        this.draggingState = null;
+        this.initialRegionState = null;
+        this.refreshOverlay();
     }
-}, { passive: false } );
 
-overlayCanvas.addEventListener( 'keydown', ( e ) => {
-    if ( ( e.key === 'Delete' || e.key === 'Backspace' ) && activeRegionIndex !== -1 ) {
+    handleWheel ( e ) {
+        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
+
         e.preventDefault();
-
-        regions.splice( activeRegionIndex, 1 );
-        activeRegionIndex = -1;
-
-        refreshOverlay();
+        const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+        this.zoomBtn( zoomDelta, e.clientX, e.clientY );
     }
-} );
 
-// Disable middle click autoscroll globally
-document.addEventListener( 'mousedown', ( e ) => {
-    if ( e.button === 1 ) e.preventDefault();
-} );
+    zoomBtn ( delta, clientX = null, clientY = null ) {
+        const newZoom = Math.max( 0.2, Math.min( 5, this.userZoom + delta ) );
 
-workspace.addEventListener( 'mousedown', onMouseDown );
-window.addEventListener( 'mousemove', onMouseMove );
-window.addEventListener( 'mouseup', onMouseUp );
-window.addEventListener( 'resize', resetZoom );
+        if ( newZoom !== this.userZoom ) {
+            const oldScale = this.baseScale * this.userZoom;
+            const newScale = this.baseScale * newZoom;
+
+            const workRect = this.workspace.getBoundingClientRect();
+            const mouseX = clientX ? clientX - workRect.left : this.workspace.clientWidth / 2;
+            const mouseY = clientY ? clientY - workRect.top : this.workspace.clientHeight / 2;
+
+            this.panX = mouseX - ( ( mouseX - this.panX ) / oldScale ) * newScale;
+            this.panY = mouseY - ( ( mouseY - this.panY ) / oldScale ) * newScale;
+
+            this.userZoom = newZoom;
+            this.applyZoom();
+        }
+    }
+
+    handleKeys ( e ) {
+        if ( ( e.key === 'Delete' || e.key === 'Backspace' ) && this.activeRegionIndex !== -1 ) {
+            e.preventDefault();
+
+            this.regions.splice( this.activeRegionIndex, 1 );
+            this.activeRegionIndex = -1;
+            this.refreshOverlay();
+        }
+    }
+
+    drawHandle ( x, y ) {
+        const sz = this.HANDLE_SIZE / ( this.baseScale * this.userZoom );
+        this.overCtx.fillStyle = '#fff';
+        this.overCtx.fillRect( x - sz / 2, y - sz / 2, sz, sz );
+        this.overCtx.lineWidth = 2 / ( this.baseScale * this.userZoom );
+        this.overCtx.strokeRect( x - sz / 2, y - sz / 2, sz, sz );
+    }
+
+    refreshOverlay () {
+        this.overCtx.save();
+        this.overCtx.setTransform( 1, 0, 0, 1, 0, 0 );
+        this.overCtx.clearRect( 0, 0, this.overCanvas.width, this.overCanvas.height );
+        this.overCtx.translate( this.OVERLAY_PAD, this.OVERLAY_PAD );
+
+        const strokeW = 3 / ( this.baseScale * this.userZoom );
+        const fontSize = Math.max( 14, 20 / ( this.baseScale * this.userZoom ) );
+
+        this.regions.forEach( ( r, idx ) => {
+            const isActive = ( idx === this.activeRegionIndex );
+            const isHover = ( idx === this.hoverRegionIndex );
+
+            let strokeColor, fillColor;
+            if ( isActive ) {
+                strokeColor = 'rgba( 59 130 246 / 1 )'; // Modern Blue
+                fillColor = 'rgba( 59 130 246 / 0.15 )';
+            } else if ( isHover ) {
+                strokeColor = 'rgba( 59 130 246 / 0.8 )';
+                fillColor = 'rgba( 59 130 246 / 0.1 )';
+            } else {
+                strokeColor = 'rgba( 148 163 184 / 0.5 )'; // Muted
+                fillColor = 'rgba( 148 163 184 / 0.05 )';
+            }
+
+            this.overCtx.strokeStyle = strokeColor;
+            this.overCtx.lineWidth = strokeW;
+            this.overCtx.fillStyle = fillColor;
+            this.overCtx.fillRect( r.x, r.y, r.w, r.h );
+            this.overCtx.strokeRect( r.x, r.y, r.w, r.h );
+
+            const badgeSz = fontSize * 1.5;
+            this.overCtx.fillStyle = isActive ? strokeColor : ( isHover ? strokeColor : 'rgba( 148 163 184 / 0.8)' );
+            this.overCtx.fillRect( r.x, r.y, badgeSz, badgeSz );
+            this.overCtx.fillStyle = 'white';
+            this.overCtx.font = `bold ${fontSize}px Inter, Arial`;
+            this.overCtx.textAlign = 'center';
+            this.overCtx.textBaseline = 'middle';
+            this.overCtx.fillText( ( idx + 1 ).toString(), r.x + badgeSz / 2, r.y + badgeSz / 2 );
+
+            if ( isActive || isHover ) {
+                this.overCtx.strokeStyle = strokeColor;
+
+                this.drawHandle( r.x, r.y );
+                this.drawHandle( r.x + r.w, r.y );
+                this.drawHandle( r.x, r.y + r.h );
+                this.drawHandle( r.x + r.w, r.y + r.h );
+            }
+        } );
+
+        this.overCtx.restore();
+    }
+
+}

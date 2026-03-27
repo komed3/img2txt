@@ -25,6 +25,43 @@ class ImageTextApp {
         $( 'languageSelect' ).onchange = ( e ) => localStorage.setItem( 'img2txt-ocr-lang', e.target.value );
     }
 
+    setupEvents () {
+        // Upload
+        const uploadZone = $( 'uploadZone' );
+        const fileInput = $( 'fileInput' );
+
+        uploadZone.ondragover = ( e ) => { e.preventDefault(), uploadZone.classList.add( 'dragover' ) };
+        uploadZone.ondragleave = () => uploadZone.classList.remove( 'dragover' );
+        uploadZone.onclick = ( e ) => { if ( e.target !== fileInput ) fileInput.click() };
+        fileInput.onchange = ( e ) => this.handleFileSelect( e.target.files[ 0 ] );
+
+        uploadZone.ondrop = ( e ) => {
+            e.preventDefault();
+
+            uploadZone.classList.remove( 'dragover' );
+
+            if ( e.dataTransfer.files?.[ 0 ] ) {
+                fileInput.files = e.dataTransfer.files;
+                this.handleFileSelect( fileInput.files[ 0 ] );
+            }
+        };
+
+        // Actions
+        $( 'clearRegionsBtn' ).onclick = () => this.workspace.clearRegions();
+        $( 'cancelBtn' ).onclick = () => this.resetApp();
+        $( 'restartBtn' ).onclick = () => this.resetApp();
+        $( 'extractBtn' ).onclick = () => this.performExtraction();
+
+        $( 'copyBtn' ).onclick = () => {
+            const text = $( 'resultText' ).value;
+            if ( ! text ) return;
+
+            navigator.clipboard.writeText( text ).then(
+                () => ui.showToast( t( 'copy_done' ) )
+            );
+        };
+    }
+
 }
 
 // Global start

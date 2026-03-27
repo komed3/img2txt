@@ -160,8 +160,6 @@ export class CanvasWorkspace {
         return new Promise ( res => this.docCanvas.toBlob( res, 'image/png' ) );
     }
 
-    // --- Interaction ---
-
     getMousePos ( e ) {
         const rect = this.overCanvas.getBoundingClientRect();
         const scaleX = this.overCanvas.width / rect.width;
@@ -352,8 +350,44 @@ export class CanvasWorkspace {
 
         this.draggingState = null;
         this.initialRegionState = null;
-
         this.refreshOverlay();
+    }
+
+    handleWheel ( e ) {
+        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
+
+        e.preventDefault();
+        const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+        this.zoomBtn( zoomDelta, e.clientX, e.clientY );
+    }
+
+    zoomBtn ( delta, clientX = null, clientY = null ) {
+        const newZoom = Math.max( 0.2, Math.min( 5, this.userZoom + delta ) );
+
+        if ( newZoom !== this.userZoom ) {
+            const oldScale = this.baseScale * this.userZoom;
+            const newScale = this.baseScale * newZoom;
+
+            const workRect = this.workspace.getBoundingClientRect();
+            const mouseX = clientX ? clientX - workRect.left : this.workspace.clientWidth / 2;
+            const mouseY = clientY ? clientY - workRect.top : this.workspace.clientHeight / 2;
+
+            this.panX = mouseX - ( ( mouseX - this.panX ) / oldScale ) * newScale;
+            this.panY = mouseY - ( ( mouseY - this.panY ) / oldScale ) * newScale;
+
+            this.userZoom = newZoom;
+            this.applyZoom();
+        }
+    }
+
+    handleKeys ( e ) {
+        if ( ( e.key === 'Delete' || e.key === 'Backspace' ) && this.activeRegionIndex !== -1 ) {
+            e.preventDefault();
+
+            this.regions.splice( this.activeRegionIndex, 1 );
+            this.activeRegionIndex = -1;
+            this.refreshOverlay();
+        }
     }
 
 }

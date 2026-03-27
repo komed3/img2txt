@@ -77,10 +77,54 @@ export class CanvasWorkspace {
 
         this.overCanvas.width = virtualW + this.OVERLAY_PAD * 2;
         this.overCanvas.height = virtualH + this.OVERLAY_PAD * 2;
-        this.overCanvas.style.left = -this.OVERLAY_PAD + "px";
-        this.overCanvas.style.top = -this.OVERLAY_PAD + "px";
+        this.overCanvas.style.left = -this.OVERLAY_PAD + 'px';
+        this.overCanvas.style.top = -this.OVERLAY_PAD + 'px';
 
         this.resetZoom();
+    }
+
+    calculateBaseScale () {
+        if ( ! this.currentImageWidth ) return;
+
+        const parentW = this.workspace.clientWidth - 40; 
+        const parentH = this.workspace.clientHeight - 40;        
+        const virtualW = this.currentImageWidth * this.renderScale;
+        const virtualH = this.currentImageHeight * this.renderScale;
+
+        this.baseScale = Math.min( ( parentW / virtualW ), ( parentH / virtualH ), 1 );
+
+        const scaledW = virtualW * this.baseScale * this.userZoom;
+        const scaledH = virtualH * this.baseScale * this.userZoom;
+
+        this.panX = ( this.workspace.clientWidth - scaledW ) / 2;
+        this.panY = ( this.workspace.clientHeight - scaledH ) / 2;
+    }
+
+    applyZoom () {
+        if ( ! this.currentImageWidth ) return;
+
+        const virtualW = this.currentImageWidth * this.renderScale;
+        const virtualH = this.currentImageHeight * this.renderScale;
+
+        this.wrapper.style.width = virtualW + 'px';
+        this.wrapper.style.height = virtualH + 'px';
+
+        const currentScale = this.baseScale * this.userZoom;
+
+        this.wrapper.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${currentScale})`;
+        $( 'zoomLevelDisplay' ).textContent = Math.round( this.userZoom * 100 ) + '%';
+    }
+
+    resetZoom () {
+        this.userZoom = 1;
+        this.calculateBaseScale();
+        this.applyZoom();
+    }
+
+    clearRegions () {
+        this.regions = [];
+        this.activeRegionIndex = -1;
+        this.refreshOverlay();
     }
 
 }

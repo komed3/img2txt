@@ -98,6 +98,19 @@ class ImageTextApp {
         }
     }
 
+    resetApp () {
+        $( 'fileInput' ).value = '';
+        $( 'resultText' ).value = '';
+        $( 'pdfControls' ).classList.add( 'hidden' );
+
+        const ctx = this.workspace.getDocContext();
+        ctx.clearRect( 0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height );
+        this.workspace.clearRegions();
+        this.workspace.resetZoom();
+
+        ui.showStep( 1 );
+    }
+
 }
 
 // Global start

@@ -1,17 +1,37 @@
-/* Map-like Zoom Overlay */
+/* Canvas Overlay */
 
-.zoom-overlay {
+.canvas-controls {
     position: absolute;
-    right: 25px;
-    bottom: 25px;
     z-index: 100;
     display: flex;
-    flex-direction: column;
     padding: 4px;
     background: var( --panel-bg );
     border: 1px solid var( --border-color );
     border-radius: 8px;
     box-shadow: var( --shadow-lg );
+}
+
+.canvas-controls-top {
+    top: 15px;
+    right: 15px;
+    align-items: center;
+}
+
+.canvas-controls-bottom {
+    bottom: 15px;
+    right: 15px;
+    flex-direction: column;
+}
+
+.control-group-horizontal {
+    display: flex;
+    align-items: center;
+}
+
+.control-group-horizontal .control-divider {
+    width: 1px;
+    height: 20px;
+    margin: 0 4px;
 }
 
 .map-btn {
@@ -24,7 +44,13 @@
     background: transparent;
     border: none;
     border-radius: 6px;
+    cursor: pointer;
     transition: background 0.15s;
+}
+
+.map-btn:disabled {
+    pointer-events: none;
+    opacity: 0.3;
 }
 
 .map-btn:hover {
@@ -37,19 +63,24 @@
     height: 20px;
 }
 
-.zoom-divider {
+.control-divider {
     margin: 4px 6px;
     height: 1px;
     background: var( --border-color );
 }
 
 .zoom-overlay-text {
-    padding: 6px 0 3px;
+    padding: 0 8px;
     text-align: center;
+    white-space: nowrap;
     font-family: var( --font-sans );
     font-size: 10px;
     font-weight: 700;
     color: var( --text-muted );
+}
+
+.canvas-controls-bottom .zoom-overlay-text {
+    padding: 6px 0 3px;
 }
 
 /* Workspace Canvas */

@@ -29,6 +29,10 @@ export class CanvasWorkspace {
         this.startX = 0;
         this.startY = 0;
 
+        // Store Image/Canvas for redraw
+        this.source = null;
+        this.rotation = 0;
+
         this.OVERLAY_PAD = 2000;
         this.HANDLE_SIZE = 8;
         this.MIN_SIZE = 15;
@@ -40,6 +44,9 @@ export class CanvasWorkspace {
         $( 'zoomInBtn' ).onclick = () => this.zoomBtn( 0.2 );
         $( 'zoomOutBtn' ).onclick = () => this.zoomBtn( -0.2 );
         $( 'zoomResetBtn' ).onclick = () => this.resetZoom();
+
+        $( 'rotateCwBtn' ).onclick = () => this.rotate( 90 );
+        $( 'rotateCcwBtn' ).onclick = () => this.rotate( -90 );
 
         this.workspace.onwheel = ( e ) => this.handleWheel( e );
         this.workspace.onmousedown = ( e ) => this.onMouseDown( e );
@@ -59,18 +66,22 @@ export class CanvasWorkspace {
         return this.regions;
     }
 
-    setupCanvas ( width, height ) {
+    setupCanvas ( width, height, source = null ) {
+        if ( source ) this.source = source;
+
         this.currentImageWidth = width;
         this.currentImageHeight = height;
 
         // Protection against hardware canvas limits (e.g. 20.000px)
         this.renderScale = 1.0;
+
         if ( width > this.MAX_CANVAS_DIM || height > this.MAX_CANVAS_DIM ) {
             this.renderScale = Math.min( this.MAX_CANVAS_DIM / width, this.MAX_CANVAS_DIM / height );
         }
 
-        const virtualW = width * this.renderScale;
-        const virtualH = height * this.renderScale;
+        const isVertical = ( this.rotation / 90 ) % 2 !== 0;
+        const virtualW = ( isVertical ? height : width ) * this.renderScale;
+        const virtualH = ( isVertical ? width : height ) * this.renderScale;
 
         this.docCanvas.width = virtualW;
         this.docCanvas.height = virtualH;
@@ -80,7 +91,28 @@ export class CanvasWorkspace {
         this.overCanvas.style.left = -this.OVERLAY_PAD + 'px';
         this.overCanvas.style.top = -this.OVERLAY_PAD + 'px';
 
+        this.renderBackground();
         this.resetZoom();
+    }
+
+    renderBackground () {
+        if ( ! this.source ) return;
+
+        this.docCtx.save();
+        this.docCtx.clearRect( 0, 0, this.docCanvas.width, this.docCanvas.height );
+
+        const isVertical = ( this.rotation / 90 ) % 2 !== 0;
+        const canvasW = this.docCanvas.width;
+        const canvasH = this.docCanvas.height;
+
+        this.docCtx.translate( canvasW / 2, canvasH / 2 );
+        this.docCtx.rotate( ( this.rotation * Math.PI ) / 180 );
+
+        const drawW = ( isVertical ? canvasH : canvasW );
+        const drawH = ( isVertical ? canvasW : canvasH );
+
+        this.docCtx.drawImage( this.source, -drawW / 2, -drawH / 2, drawW, drawH );
+        this.docCtx.restore();
     }
 
     calculateBaseScale () {
@@ -88,8 +120,9 @@ export class CanvasWorkspace {
 
         const parentW = this.workspace.clientWidth - 40;
         const parentH = this.workspace.clientHeight - 40;
-        const virtualW = this.currentImageWidth * this.renderScale;
-        const virtualH = this.currentImageHeight * this.renderScale;
+        const isVertical = ( this.rotation / 90 ) % 2 !== 0;
+        const virtualW = ( isVertical ? this.currentImageHeight : this.currentImageWidth ) * this.renderScale;
+        const virtualH = ( isVertical ? this.currentImageWidth : this.currentImageHeight ) * this.renderScale;
 
         this.baseScale = Math.min( ( parentW / virtualW ), ( parentH / virtualH ), 1 );
 
@@ -103,8 +136,9 @@ export class CanvasWorkspace {
     applyZoom () {
         if ( ! this.currentImageWidth ) return;
 
-        const virtualW = this.currentImageWidth * this.renderScale;
-        const virtualH = this.currentImageHeight * this.renderScale;
+        const isVertical = ( this.rotation / 90 ) % 2 !== 0;
+        const virtualW = ( isVertical ? this.currentImageHeight : this.currentImageWidth ) * this.renderScale;
+        const virtualH = ( isVertical ? this.currentImageWidth : this.currentImageHeight ) * this.renderScale;
 
         this.wrapper.style.width = virtualW + 'px';
         this.wrapper.style.height = virtualH + 'px';
@@ -112,7 +146,8 @@ export class CanvasWorkspace {
         const currentScale = this.baseScale * this.userZoom;
 
         this.wrapper.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${currentScale})`;
-        $( 'zoomLevelDisplay' ).textContent = Math.round( this.userZoom * 100 ) + '%';
+        const zoomLbl = $( 'zoomLevel' );
+        if ( zoomLbl ) zoomLbl.textContent = Math.round( this.userZoom * 100 );
     }
 
     resetZoom () {
@@ -127,6 +162,13 @@ export class CanvasWorkspace {
         this.refreshOverlay();
     }
 
+    rotate ( delta ) {
+        this.rotation = ( this.rotation + delta + 360 ) % 360;
+        this.setupCanvas( this.currentImageWidth, this.currentImageHeight );
+        this.regions = []; // Regions might not survive rotation well, clear them
+        this.activeRegionIndex = -1;
+    }
+
     getDocContext () {
         return this.docCtx;
     }
@@ -136,7 +178,7 @@ export class CanvasWorkspace {
     }
 
     async cropRegionToBlob ( region ) {
-        // We crop from the Virtual Canvas but using Original Ratios
+        // Create a temporary canvas for the final crop
         const tempCanvas = document.createElement( 'canvas' );
         tempCanvas.width = region.w / this.renderScale;
         tempCanvas.height = region.h / this.renderScale;
@@ -145,7 +187,7 @@ export class CanvasWorkspace {
         tempCtx.fillStyle = 'white';
         tempCtx.fillRect( 0, 0, tempCanvas.width, tempCanvas.height );
 
-        // Draw from scaled source to full size destination
+        // Draw selection from docCanvas
         tempCtx.drawImage(
             this.docCanvas, region.x, region.y, region.w, region.h,
             0, 0, tempCanvas.width, tempCanvas.height
@@ -196,8 +238,8 @@ export class CanvasWorkspace {
     }
 
     onMouseDown ( e ) {
-        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
-        if ( e.target.closest( '.zoom-overlay' ) || e.target.closest( '.pagination' ) ) return;
+        if ( ! $( 'step2' )?.classList.contains( 'active-step' ) ) return;
+        if ( ! ( e.target === this.overCanvas || e.target === this.docCanvas || e.target === this.wrapper ) ) return;
 
         if ( e.ctrlKey || e.button === 1 ) {
             e.preventDefault();
@@ -230,7 +272,7 @@ export class CanvasWorkspace {
     }
 
     onMouseMove ( e ) {
-        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
+        if ( ! $( 'step2' )?.classList.contains( 'active-step' ) ) return;
 
         if ( this.draggingState === 'pan' ) {
             this.panX += e.clientX - this.startX;
@@ -241,6 +283,11 @@ export class CanvasWorkspace {
             this.applyZoom();
             this.workspace.style.cursor = 'grabbing';
 
+            return;
+        }
+
+        if ( ! e.target === this.overCanvas || e.target === this.docCanvas || e.target === this.wrapper ) {
+            if ( ! this.draggingState ) this.workspace.style.cursor = 'default';
             return;
         }
 
@@ -354,7 +401,7 @@ export class CanvasWorkspace {
     }
 
     handleWheel ( e ) {
-        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
+        if ( ! $( 'step2' )?.classList.contains( 'active-step' ) ) return;
 
         e.preventDefault();
         const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;

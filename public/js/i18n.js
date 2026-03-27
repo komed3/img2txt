@@ -19,7 +19,7 @@ export class I18nManager {
             this.translations = await response.json();
             this.lang = lang;
 
-            localStorage.setItem('img2txt-lang', lang);
+            localStorage.setItem( 'img2txt-lang', lang );
             document.documentElement.lang = lang;
         } catch ( err ) {
             console.error( 'Failed to load translations:', err );
@@ -40,6 +40,14 @@ export class I18nManager {
             const key = el.getAttribute( 'data-i18n-placeholder' );
             if ( this.translations[ key ] ) el.placeholder = this.translations[ key ];
         } );
+
+        $$( '[data-i18n-title]' ).forEach( el => {
+            const key = el.getAttribute( 'data-i18n-title' );
+            if ( this.translations[ key ] ) el.title = this.translations[ key ];
+        } );
+
+        // Update title
+        if ( this.translations.subtitle ) document.title = 'img2txt — ' + this.translations.subtitle;
 
         // Update active buttons
         const btnEn = $( 'langEn' );

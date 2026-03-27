@@ -32,6 +32,12 @@ header {
     gap: 15px;
 }
 
+.header-controls .divider {
+    width: 1px;
+    height: 24px;
+    background: var( --border-color );
+}
+
 .lang-switch {
     display: flex;
     gap: 4px;
@@ -66,8 +72,8 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     color: var( --text-muted );
     background: transparent;
     border: none;
@@ -82,8 +88,8 @@ header {
 }
 
 .theme-btn svg, .repo-btn svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
 }
 
 @media ( max-width: 768px ) {

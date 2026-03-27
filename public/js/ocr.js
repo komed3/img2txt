@@ -141,3 +141,35 @@ class TextRefiner {
     }
 
 }
+
+export class OCREngine {
+
+    constructor () {
+        this.refiner = new TextRefiner ();
+        this.worker = null;
+    }
+
+    async process ( blobs, lang ) {
+        // Create new worker if none exists
+        if ( ! this.worker ) this.worker = await Tesseract.createWorker( lang, 1, {
+            workerPath: 'vendor/tesseract/worker.min.js',
+            corePath: 'vendor/tesseract/tesseract-core.wasm.js',
+            langPath: 'vendor/tesseract/lang-data'
+        } );
+        // Reinitialize if language has changed
+        else await this.worker.reinitialize( lang );
+
+        await this.worker.setParameters( { tessedit_pageseg_mode: 3 } );
+
+        let combinedText = '';
+        for ( let i = 0; i < blobs.length; i++ ) {
+            const { data: { text } } = await this.worker.recognize( blobs[ i ] );
+            combinedText += text + '\n\n';
+        }
+
+        return this.refiner.process( combinedText );
+    }
+
+}
+
+export const ocrEngine = new OCREngine ();

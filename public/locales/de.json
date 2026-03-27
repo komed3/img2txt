@@ -13,7 +13,7 @@
   "exp_1_title": "1. Dokument wählen",
   "exp_2_text": "Markiere mit der Maus zielgerichtet jene Textbereiche oder Spalten, die in Text umgewandelt werden sollen.",
   "exp_2_title": "2. Bereiche markieren",
-  "exp_3_text": "Dank lokaler Tesseract WebAssembly Ausführung bleiben deine Daten restlos privat. Die Erkennung findet offline in deinem Browser statt. Wir übertragen absolut keine Daten an externe Server!",
+  "exp_3_text": "Dank lokaler Tesseract WebAssembly Ausführung bleiben deine Daten restlos privat. Die Erkennung findet offline in deinem Browser statt. Daten werden nicht an externe Server weitergegeben!",
   "exp_3_title": "3. 100% Sicher & Lokal",
   "extract_Btn": "Texte extrahieren",
   "next_Btn": "Vor",

@@ -20,20 +20,20 @@
             </div>
 
             <div class="header-controls">
-                <a href="https://github.com/komed3/img2txt" target="_blank" class="repo-btn" aria-label="GitHub Repository" title="GitHub">
+                <a href="https://github.com/komed3/img2txt" target="_blank" class="repo-btn" aria-label="GitHub Repository" data-i18n-title="github_repo">
                     <svg><use href="assets/images/icons.svg#icon-github"></use></svg>
                 </a>
-                <a href="https://ko-fi.com/komed3" target="_blank" class="repo-btn" aria-label="Support me on Ko-fi" title="Support">
+                <a href="https://ko-fi.com/komed3" target="_blank" class="repo-btn" aria-label="Support me on Ko-fi" data-i18n-title="support_me">
                     <svg><use href="assets/images/icons.svg#icon-heart"></use></svg>
                 </a>
                 <div class="divider"></div>
-                <button id="themeToggleBtn" class="theme-btn" aria-label="Toggle Theme" title="Theme">
+                <button id="themeToggleBtn" class="theme-btn" aria-label="Toggle Theme" data-i18n-title="toggle_theme">
                     <svg><use id="themeIconUse" href="assets/images/icons.svg#icon-moon"></use></svg>
                 </button>
                 <div class="divider"></div>
                 <div class="lang-switch">
-                    <button id="langEn" class="lang-btn">EN</button>
-                    <button id="langDe" class="lang-btn">DE</button>
+                    <button id="langEn" aria-label="Change language to English" class="lang-btn">EN</button>
+                    <button id="langDe" aria-label="Change language to German" class="lang-btn">DE</button>
                 </div>
             </div>
         </header>
@@ -104,16 +104,7 @@
                             </div>
                         </section>
 
-                        <div id="pdfControls" class="control-group hidden">
-                            <h2 data-i18n="pdf_nav"></h2>
-                            <div class="pagination">
-                                <button id="prevPageBtn" class="btn btn-small" data-i18n="prev_Btn"></button>
-                                <span class="page-info"><span data-i18n="page_lbl"></span> <span id="pageNum">1</span> / <span id="pageCount">?</span></span>
-                                <button id="nextPageBtn" class="btn btn-small" data-i18n="next_Btn"></button>
-                            </div>
-                        </div>
-
-                        <button id="cancelBtn" class="btn btn-ghost" data-i18n="cancel_Btn" style="margin-top:auto;"></button>
+                        <button id="cancelBtn" class="btn btn-ghost" data-i18n="cancel_Btn" style="margin-top: auto;"></button>
                     </aside>
 
                     <section class="workspace" id="workspace">
@@ -121,22 +112,46 @@
                             <canvas id="documentCanvas"></canvas>
                             <canvas id="overlayCanvas" tabindex="0"></canvas>
                         </div>
-                    </section>
 
-                    <div class="zoom-overlay">
-                        <button id="zoomInBtn" class="map-btn" aria-label="Zoom In">
-                            <svg><use href="assets/images/icons.svg#icon-plus"></use></svg>
-                        </button>
-                        <div class="zoom-divider"></div>
-                        <button id="zoomOutBtn" class="map-btn" aria-label="Zoom Out">
-                            <svg><use href="assets/images/icons.svg#icon-minus"></use></svg>
-                        </button>
-                        <div class="zoom-divider"></div>
-                        <button id="zoomResetBtn" class="map-btn" aria-label="Reset Zoom">
-                            <svg><use href="assets/images/icons.svg#icon-reset"></use></svg>
-                        </button>
-                        <div id="zoomLevelDisplay" class="zoom-overlay-text">100%</div>
-                    </div>
+                        <!-- CANVAS CONTROLS: TOP (Navigation & Rotation) -->
+                        <div class="canvas-controls canvas-controls-top">
+                            <div id="pdfNavCanvas" class="control-group-horizontal hidden">
+                                <button id="prevPageBtnCanvas" class="map-btn" data-i18n-title="prev_page">
+                                    <svg><use href="assets/images/icons.svg#icon-arrow-left"></use></svg>
+                                </button>
+                                <div class="zoom-overlay-text"><span id="pageNumCanvas">1</span> / <span id="pageCountCanvas">1</span></div>
+                                <button id="nextPageBtnCanvas" class="map-btn" data-i18n-title="next_page">
+                                    <svg><use href="assets/images/icons.svg#icon-arrow-right"></use></svg>
+                                </button>
+                                <div class="zoom-divider"></div>
+                            </div>
+
+                            <div class="control-group-horizontal">
+                                <button id="rotateCcwBtn" class="map-btn" data-i18n-title="rotate_left">
+                                    <svg><use href="assets/images/icons.svg#icon-rotate-ccw"></use></svg>
+                                </button>
+                                <div class="zoom-divider"></div>
+                                <button id="rotateCwBtn" class="map-btn" data-i18n-title="rotate_right">
+                                    <svg><use href="assets/images/icons.svg#icon-rotate-cw"></use></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CANVAS CONTROLS: BOTTOM (Zoom) -->
+                        <div class="canvas-controls canvas-controls-bottom">
+                            <button id="zoomInBtn" class="map-btn" data-i18n-title="zoom_in">
+                                <svg><use href="assets/images/icons.svg#icon-plus"></use></svg>
+                            </button>
+                            <div class="zoom-overlay-text text-center"><span id="zoomLevel">100</span>%</div>
+                            <button id="zoomOutBtn" class="map-btn" data-i18n-title="zoom_out">
+                                <svg><use href="assets/images/icons.svg#icon-minus"></use></svg>
+                            </button>
+                            <div class="zoom-divider"></div>
+                            <button id="zoomResetBtn" class="map-btn" data-i18n-title="zoom_reset">
+                                <svg><use href="assets/images/icons.svg#icon-maximize"></use></svg>
+                            </button>
+                        </div>
+                    </section>
                 </div>
             </div>
 

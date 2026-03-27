@@ -28,7 +28,7 @@
     align-items: center;
 }
 
-.control-group-horizontal .zoom-divider {
+.control-group-horizontal .control-divider {
     width: 1px;
     height: 20px;
     margin: 0 4px;
@@ -63,7 +63,7 @@
     height: 20px;
 }
 
-.zoom-divider {
+.control-divider {
     margin: 4px 6px;
     height: 1px;
     background: var( --border-color );

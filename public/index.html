@@ -14,10 +14,27 @@
     </head>
     <body>
         <header>
-            <div class="app-logo"><img src="assets/images/logo.svg" alt="img2txt"></div>
-            <div class="lang-switch">
-                <button id="langEn" class="lang-btn">EN</button>
-                <button id="langDe" class="lang-btn">DE</button>
+            <div class="header-left">
+                <div class="app-logo"><img id="appLogoImg" src="assets/images/logo.svg" alt="img2txt"></div>
+                <p class="subtitle" data-i18n="subtitle"></p>
+            </div>
+
+            <div class="header-controls">
+                <a href="https://github.com/komed3/img2txt" target="_blank" class="repo-btn" aria-label="GitHub Repository" title="GitHub">
+                    <svg><use href="assets/images/icons.svg#icon-github"></use></svg>
+                </a>
+                <a href="https://ko-fi.com/komed3" target="_blank" class="repo-btn" aria-label="Support me on Ko-fi" title="Ko-fi">
+                    <svg><use href="assets/images/icons.svg#icon-heart"></use></svg>
+                </a>
+                <div class="divider"></div>
+                <button id="themeToggleBtn" class="theme-btn" aria-label="Toggle Theme" title="Theme">
+                    <svg><use id="themeIconUse" href="assets/images/icons.svg#icon-moon"></use></svg>
+                </button>
+                <div class="divider"></div>
+                <div class="lang-switch">
+                    <button id="langEn" class="lang-btn">EN</button>
+                    <button id="langDe" class="lang-btn">DE</button>
+                </div>
             </div>
         </header>
 
@@ -30,6 +47,30 @@
                     <div class="upload-text" data-i18n="dropzone_title"></div>
                     <div class="upload-subtext" data-i18n="dropzone_sub"></div>
                     <input type="file" id="fileInput" accept="image/*,application/pdf" class="hidden-input">
+                </div>
+
+                <div class="step-explainer">
+                    <div class="explainer-item">
+                        <div class="explainer-icon"><svg><use href="assets/images/icons.svg#icon-drag"></use></svg></div>
+                        <div class="explainer-content">
+                            <h3 data-i18n="exp_1_title"></h3>
+                            <p data-i18n="exp_1_text"></p>
+                        </div>
+                    </div>
+                    <div class="explainer-item">
+                        <div class="explainer-icon"><svg><use href="assets/images/icons.svg#icon-select"></use></svg></div>
+                        <div class="explainer-content">
+                            <h3 data-i18n="exp_2_title"></h3>
+                            <p data-i18n="exp_2_text"></p>
+                        </div>
+                    </div>
+                    <div class="explainer-item">
+                        <div class="explainer-icon"><svg><use href="assets/images/icons.svg#icon-lock"></use></svg></div>
+                        <div class="explainer-content">
+                            <h3 data-i18n="exp_3_title"></h3>
+                            <p data-i18n="exp_3_text"></p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

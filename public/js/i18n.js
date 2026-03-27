@@ -41,6 +41,11 @@ export class I18nManager {
             if ( this.translations[ key ] ) el.placeholder = this.translations[ key ];
         } );
 
+        $$( '[data-i18n-title]' ).forEach( el => {
+            const key = el.getAttribute( 'data-i18n-title' );
+            if ( this.translations[ key ] ) el.title = this.translations[ key ];
+        } );
+
         // Update active buttons
         const btnEn = $( 'langEn' );
         const btnDe = $( 'langDe' );

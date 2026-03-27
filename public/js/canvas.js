@@ -160,4 +160,41 @@ export class CanvasWorkspace {
         return new Promise ( res => this.docCanvas.toBlob( res, 'image/png' ) );
     }
 
+    // --- Interaction ---
+
+    getMousePos ( e ) {
+        const rect = this.overCanvas.getBoundingClientRect();
+        const scaleX = this.overCanvas.width / rect.width;
+        const scaleY = this.overCanvas.height / rect.height;
+
+        return {
+            x: ( e.clientX - rect.left ) * scaleX - this.OVERLAY_PAD,
+            y: ( e.clientY - rect.top ) * scaleY - this.OVERLAY_PAD
+        };
+    }
+
+    checkHit ( x, y ) {
+        for ( let i = this.regions.length - 1; i >= 0; i-- ) {
+            const r = this.regions[ i ];
+
+            if ( i === this.activeRegionIndex ) {
+                const hsz = ( this.HANDLE_SIZE * 2 ) / this.userZoom;
+                const corners = [
+                    { x: r.x, y: r.y, type: 'resize-tl' },
+                    { x: r.x + r.w, y: r.y, type: 'resize-tr' },
+                    { x: r.x, y: r.y + r.h, type: 'resize-bl' },
+                    { x: r.x + r.w, y: r.y + r.h, type: 'resize-br' }
+                ];
+
+                for ( let { x: cx, y: cy, type } of corners ) {
+                    if ( Math.abs( x - cx ) < hsz && Math.abs( y - cy ) < hsz ) return { index: i, type };
+                }
+            }
+
+            if ( x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h ) return { index: i, type: 'move' };
+        }
+
+        return null;
+    }
+
 }

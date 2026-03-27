@@ -62,6 +62,42 @@ class ImageTextApp {
         };
     }
 
+    async handleFileSelect ( file ) {
+        if ( ! file ) return;
+
+        this.workspace.clearRegions();
+        this.workspace.resetZoom();
+
+        if ( file.type === 'application/pdf' ) {
+            ui.showLoader( t( 'status_load_pdf' ), 250 );
+
+            const reader = new FileReader ();
+            reader.onload = async ( e ) => {
+                await this.pdf.load( e.target.result );
+                ui.showStep( 2, () => this.workspace.resetZoom() );
+            };
+
+            reader.readAsArrayBuffer( file );
+        } else if ( file.type.startsWith( 'image/' ) ) {
+            ui.showLoader( t( 'status_load_img' ), 250 );
+            $( 'pdfControls' ).classList.add( 'hidden' );
+
+            const img = new Image ();
+            img.onload = () => {
+                this.workspace.setupCanvas( img.width, img.height );
+                this.workspace.getDocContext().drawImage(
+                    img, 0, 0, img.width, img.height,
+                    0, 0, this.workspace.docCanvas.width, this.workspace.docCanvas.height
+                );
+
+                ui.hideLoader();
+                ui.showStep( 2, () => this.workspace.resetZoom() );
+            };
+
+            img.src = URL.createObjectURL( file );
+        }
+    }
+
 }
 
 // Global start

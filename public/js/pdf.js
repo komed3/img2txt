@@ -84,6 +84,7 @@ export class PdfRenderer {
         const next = this.pageNum + delta;
         if ( next < 1 || next > ( this.pdfDoc?.numPages || 1 ) ) return;
 
+        this.workspace.rotation = 0;
         this.workspace.clearRegions();
         await this.renderPage( next );
         this.workspace.resetZoom();

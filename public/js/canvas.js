@@ -127,4 +127,37 @@ export class CanvasWorkspace {
         this.refreshOverlay();
     }
 
+    getDocContext () {
+        return this.docCtx;
+    }
+
+    getScaleRatio () {
+        return this.renderScale;
+    }
+
+    async cropRegionToBlob ( region ) {
+        // We crop from the Virtual Canvas but using Original Ratios
+        const tempCanvas = document.createElement( 'canvas' );
+        tempCanvas.width = region.w / this.renderScale;
+        tempCanvas.height = region.h / this.renderScale;
+
+        const tempCtx = tempCanvas.getContext( '2d' );
+        tempCtx.fillStyle = 'white';
+        tempCtx.fillRect( 0, 0, tempCanvas.width, tempCanvas.height );
+
+        // Draw from scaled source to full size destination
+        tempCtx.drawImage(
+            this.docCanvas, region.x, region.y, region.w, region.h,
+            0, 0, tempCanvas.width, tempCanvas.height
+        );
+
+        return new Promise ( res => tempCanvas.toBlob( res, 'image/png' ) );
+    }
+
+    async getDocumentBlob () {
+        // If we downscaled, we might want the original, but for OCR 4096px is usually plenty.
+        // Let's return the docCanvas blob.
+        return new Promise ( res => this.docCanvas.toBlob( res, 'image/png' ) );
+    }
+
 }

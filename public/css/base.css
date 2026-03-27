@@ -6,16 +6,87 @@
 
 :root {
     --font-sans: 'Inter', sans-serif;
-    --text-color: #1a202c;
-    --text-muted: #64748b;
+    
+    /* Colors - Light Theme */
     --bg-color: #f4f6f8;
-    --accent-bg: #f8fafc;
     --panel-bg: #ffffff;
+    --text-color: #1a202c;
+    --text-dark: #334155;
+    --text-label: #475569;
+    --text-muted: #64748b;
+    --text-placeholder: #94a3b8;
+    
     --border-color: #cbd5e1;
+    --accent-bg: #f8fafc;
+    
+    /* Primary */
     --primary-color: #0f4c81;
     --primary-hover: #0d406b;
+    --primary-rgb: 15 76 129;
+    
+    /* Secondary Elements */
     --secondary-color: #e2e8f0;
     --secondary-hover: #cbd5e1;
+    
+    /* Specific overrides */
+    --upload-hover-bg: #f0f4ff;
+    --toast-bg: #1e293b;
+    --toast-color: #ffffff;
+    --btn-ghost-hover: #f1f5f9;
+    --lang-hover-bg: #e0e7ff;
+    --workspace-bg: #e2e8f0;
+    --input-bg: #fafafa;
+    --overlay-bg: rgba( 255 255 255 / 0.9 );
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba( 0 0 0 / 0.05 );
+    --shadow-md: 0 4px 6px -1px rgba( 0 0 0 / 0.1 ), 0 2px 4px -1px rgba( 0 0 0 / 0.06 );
+    --shadow-lg: 0 4px 10px rgba( 0 0 0 / 0.15 );
+    --shadow-toast: 0 4px 6px rgba( 0 0 0 / 0.2 );
+    
+    --shadow-btn: 0 1px 3px rgba( 15 76 129 / 0.3 );
+    --shadow-btn-hover: 0 2px 5px rgba( 15 76 129 / 0.4 );
+    --focus-ring: 0 0 0 3px rgba( 15 76 129 / 0.15 );
+    --focus-ring-subtle: 0 0 0 3px rgba( 15 76 129 / 0.1 );
+}
+
+html.dark-theme {
+    --bg-color: #0f172a;
+    --panel-bg: #1e293b;
+    --text-color: #f8fafc;
+    --text-dark: #f1f5f9;
+    --text-label: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-placeholder: #64748b;
+    
+    --border-color: #334155;
+    --accent-bg: #0f172a;
+    
+    --primary-color: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-rgb: 59 130 246;
+    
+    --secondary-color: #334155;
+    --secondary-hover: #475569;
+    
+    --upload-hover-bg: #1e293b;
+    --toast-bg: #f8fafc;
+    --toast-color: #0f172a;
+    --btn-ghost-hover: #334155;
+    --lang-hover-bg: #334155;
+    --workspace-bg: #020617;
+    --input-bg: #0f172a;
+    --overlay-bg: rgba( 15 23 42 / 0.9 );
+    
+    --shadow-sm: 0 1px 3px rgba( 0 0 0 / 0.3 );
+    --shadow-md: 0 4px 6px -1px rgba( 0 0 0 / 0.4 ), 0 2px 4px -1px rgba( 0 0 0 / 0.2 );
+    --shadow-lg: 0 4px 10px rgba( 0 0 0 / 0.5 );
+    --shadow-toast: 0 4px 6px rgba( 0 0 0 / 0.4 );
+    
+    --shadow-btn: 0 1px 3px rgba( 59 130 246 / 0.3 );
+    --shadow-btn-hover: 0 2px 5px rgba( 59 130 246 / 0.4 );
+    --focus-ring: 0 0 0 3px rgba( 59 130 246 / 0.15 );
+    --focus-ring-subtle: 0 0 0 3px rgba( 59 130 246 / 0.1 );
 }
 
 *, *::before, *::after {
@@ -35,12 +106,12 @@ body {
     color: var( --text-color );
     background-color: var( --bg-color );
     overflow: hidden;
+    transition: background-color 0.2s, color 0.2s;
     -webkit-user-select: none;
     user-select: none;
 }
 
-input[type="file"], input[type="radio"], input[type="checkbox"],
-button, select, label[for] {
+input[type="file"], input[type="radio"], input[type="checkbox"], button, select, label[for] {
     cursor: pointer;
 }
 

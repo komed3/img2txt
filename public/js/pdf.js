@@ -39,7 +39,7 @@ export class PdfRenderer {
         if ( this.isRendering ) return;
         this.isRendering = true;
 
-        ui.showLoader( t( 'status_render' ) + num );
+        ui.showLoader( t( 'status_render' ) + num, 250 );
 
         const page = await this.pdfDoc.getPage( num );
         const viewport = page.getViewport( { scale: 2.0 } );

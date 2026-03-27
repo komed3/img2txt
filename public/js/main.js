@@ -31,7 +31,7 @@ uploadZone.addEventListener( 'drop', ( e ) => {
     }
 } );
 
-uploadZone.addEventListener( 'click', ( e ) => { if( e.target !== fileInput ) fileInput.click() } );
+uploadZone.addEventListener( 'click', ( e ) => { if ( e.target !== fileInput ) fileInput.click() } );
 fileInput.addEventListener( 'change', handleFileSelect );
 
 clearRegionsBtn.addEventListener( 'click', clearRegions );

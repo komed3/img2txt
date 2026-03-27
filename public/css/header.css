@@ -16,6 +16,10 @@ header {
     gap: 30px;
 }
 
+.subtitle {
+    color: var( --text-muted );
+}
+
 .app-logo {
     display: flex;
     align-items: center;

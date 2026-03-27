@@ -14,17 +14,17 @@ export class CanvasWorkspace {
         this.currentImageHeight = 0;
 
         // Virtual sizing for hardware limit protection (20k fix)
-        this.renderScale = 1.0; 
-        this.MAX_CANVAS_DIM = 4096; 
+        this.renderScale = 1.0;
+        this.MAX_CANVAS_DIM = 4096;
 
-        this.baseScale = 1; 
-        this.userZoom = 1;  
+        this.baseScale = 1;
+        this.userZoom = 1;
         this.panX = 0;
         this.panY = 0;
 
         this.regions = [];
-        this.draggingState = null; 
-        this.activeRegionIndex = -1; 
+        this.draggingState = null;
+        this.activeRegionIndex = -1;
         this.hoverRegionIndex = -1;
         this.startX = 0;
         this.startY = 0;
@@ -51,7 +51,7 @@ export class CanvasWorkspace {
 
         // Block middle click autoscroll
         document.addEventListener( 'mousedown', ( e ) => {
-            if ( e.button === 1 ) e.preventDefault(); 
+            if ( e.button === 1 ) e.preventDefault();
         }, { passive: false } );
     }
 
@@ -86,8 +86,8 @@ export class CanvasWorkspace {
     calculateBaseScale () {
         if ( ! this.currentImageWidth ) return;
 
-        const parentW = this.workspace.clientWidth - 40; 
-        const parentH = this.workspace.clientHeight - 40;        
+        const parentW = this.workspace.clientWidth - 40;
+        const parentH = this.workspace.clientHeight - 40;
         const virtualW = this.currentImageWidth * this.renderScale;
         const virtualH = this.currentImageHeight * this.renderScale;
 
@@ -201,7 +201,7 @@ export class CanvasWorkspace {
 
         if ( e.ctrlKey || e.button === 1 ) {
             e.preventDefault();
- 
+
             this.draggingState = 'pan';
             this.startX = e.clientX;
             this.startY = e.clientY;
@@ -388,6 +388,67 @@ export class CanvasWorkspace {
             this.activeRegionIndex = -1;
             this.refreshOverlay();
         }
+    }
+
+    drawHandle ( x, y ) {
+        const sz = this.HANDLE_SIZE / ( this.baseScale * this.userZoom );
+        this.overCtx.fillStyle = '#fff';
+        this.overCtx.fillRect( x - sz / 2, y - sz / 2, sz, sz );
+        this.overCtx.lineWidth = 2 / ( this.baseScale * this.userZoom );
+        this.overCtx.strokeRect( x - sz / 2, y - sz / 2, sz, sz );
+    }
+
+    refreshOverlay () {
+        this.overCtx.save();
+        this.overCtx.setTransform( 1, 0, 0, 1, 0, 0 );
+        this.overCtx.clearRect( 0, 0, this.overCanvas.width, this.overCanvas.height );
+        this.overCtx.translate( this.OVERLAY_PAD, this.OVERLAY_PAD );
+
+        const strokeW = 3 / ( this.baseScale * this.userZoom );
+        const fontSize = Math.max( 14, 20 / ( this.baseScale * this.userZoom ) );
+
+        this.regions.forEach( ( r, idx ) => {
+            const isActive = ( idx === this.activeRegionIndex );
+            const isHover = ( idx === this.hoverRegionIndex );
+
+            let strokeColor, fillColor;
+            if ( isActive ) {
+                strokeColor = 'rgba( 59 130 246 / 1 )'; // Modern Blue
+                fillColor = 'rgba( 59 130 246 / 0.15 )';
+            } else if ( isHover ) {
+                strokeColor = 'rgba( 59 130 246 / 0.8 )';
+                fillColor = 'rgba( 59 130 246 / 0.1 )';
+            } else {
+                strokeColor = 'rgba( 148 163 184 / 0.5 )'; // Muted
+                fillColor = 'rgba( 148 163 184 / 0.05 )';
+            }
+
+            this.overCtx.strokeStyle = strokeColor;
+            this.overCtx.lineWidth = strokeW;
+            this.overCtx.fillStyle = fillColor;
+            this.overCtx.fillRect( r.x, r.y, r.w, r.h );
+            this.overCtx.strokeRect( r.x, r.y, r.w, r.h );
+
+            const badgeSz = fontSize * 1.5;
+            this.overCtx.fillStyle = isActive ? strokeColor : ( isHover ? strokeColor : 'rgba( 148 163 184 / 0.8)' );
+            this.overCtx.fillRect( r.x, r.y, badgeSz, badgeSz );
+            this.overCtx.fillStyle = 'white';
+            this.overCtx.font = `bold ${fontSize}px Inter, Arial`;
+            this.overCtx.textAlign = 'center';
+            this.overCtx.textBaseline = 'middle';
+            this.overCtx.fillText( ( idx + 1 ).toString(), r.x + badgeSz / 2, r.y + badgeSz / 2 );
+
+            if ( isActive || isHover ) {
+                this.overCtx.strokeStyle = strokeColor;
+
+                this.drawHandle( r.x, r.y );
+                this.drawHandle( r.x + r.w, r.y );
+                this.drawHandle( r.x, r.y + r.h );
+                this.drawHandle( r.x + r.w, r.y + r.h );
+            }
+        } );
+
+        this.overCtx.restore();
     }
 
 }

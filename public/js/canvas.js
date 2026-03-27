@@ -238,8 +238,8 @@ export class CanvasWorkspace {
     }
 
     onMouseDown ( e ) {
-        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
-        if ( e.target.closest( '.zoom-overlay' ) || e.target.closest( '.pagination' ) ) return;
+        if ( ! $( 'step2' )?.classList.contains( 'active-step' ) ) return;
+        if ( ! ( e.target === this.overCanvas || e.target === this.docCanvas || e.target === this.wrapper ) ) return;
 
         if ( e.ctrlKey || e.button === 1 ) {
             e.preventDefault();
@@ -272,7 +272,7 @@ export class CanvasWorkspace {
     }
 
     onMouseMove ( e ) {
-        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
+        if ( ! $( 'step2' )?.classList.contains( 'active-step' ) ) return;
 
         if ( this.draggingState === 'pan' ) {
             this.panX += e.clientX - this.startX;
@@ -283,6 +283,11 @@ export class CanvasWorkspace {
             this.applyZoom();
             this.workspace.style.cursor = 'grabbing';
 
+            return;
+        }
+
+        if ( ! e.target === this.overCanvas || e.target === this.docCanvas || e.target === this.wrapper ) {
+            if ( ! this.draggingState ) this.workspace.style.cursor = 'default';
             return;
         }
 
@@ -396,7 +401,7 @@ export class CanvasWorkspace {
     }
 
     handleWheel ( e ) {
-        if ( ! $( 'step2' ).classList.contains( 'active-step' ) ) return;
+        if ( ! $( 'step2' )?.classList.contains( 'active-step' ) ) return;
 
         e.preventDefault();
         const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;

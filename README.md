@@ -1,10 +1,10 @@
 # img2txt
 
-The web-based tool for precise text extraction from images and PDF documents relying on local OCR processing via Tesseract WebAssembly.
+Free web-based tool for precise text extraction from images and PDF documents relying on local OCR processing via Tesseract WebAssembly.
 
 ## Features
 
-- **Precise text extraction**: Uses Tesseract WebAssembly for accurate OCR processing.
+- **Precise text extraction**: Uses [Tesseract WebAssembly](https://github.com/tesseract-ocr) for accurate OCR processing.
 - **Local processing**: All OCR processing happens locally in the browser, ensuring data privacy.
 - **Image and PDF support**: Supports both image and PDF documents.
 - **Interactive region selection**: Allows users to select specific regions for text extraction.
@@ -15,9 +15,9 @@ The web-based tool for precise text extraction from images and PDF documents rel
 ## Usage
 
 1. Upload an image or PDF document.
-2. Select the regions for text extraction. Regions will be processed in the order they are selected.
+2. Select the regions for text extraction. Will be processed in the order they are selected.
 3. Click the "Extract Text" button to extract text from the selected regions.
-4. The extracted text will be formatted and displayed in the results section.
+4. The extracted text will be formatted and displayed, ready to be copied to the clipboard.
 
 ## License
 

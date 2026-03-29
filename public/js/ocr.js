@@ -13,24 +13,27 @@ class TextFormatter {
         text = text.replace( /(\p{Ll}+)-\r?\n+(\p{Ll}+)/ug, '$1$2' );
 
         // Step 4: Mark list items
-        text = text.replace( /(^|\n)([ \t]*)([-+*])\s+/g, '$1<<<LIST>>>$2- ' );
+        text = text.replace( /(^|\n)([ \t]*)([-+*=])\s+/g, '$1<<<LIST>>>$2- ' );
 
-        // Step 5: Mark likely paragraph breaks with a placeholder
+        // Step 5: Remove empty lines between list items
+        text = text.replace( /(<<<LIST>>>[^\n]+)\n+(?=<<<LIST>>>)/g, '$1\n' );
+
+        // Step 6: Mark likely paragraph breaks with a placeholder
         text = text.replace( /([.!?])\n+(\p{Lu})/ug, '$1<<<PARA>>>$2' );
 
-        // Step 6: Replace all remaining newlines with a space (except lists)
+        // Step 7: Replace all remaining newlines with a space (except lists)
         text = text.replace( /\n+(?!<<<LIST>>>)/g, ' ' );
 
-        // Step 7: Restore paragraph breaks (double newline for readability)
+        // Step 8: Restore paragraph breaks (double newline for readability)
         text = text.replace( /<<<PARA>>>/g, '\n\n' );
 
-        // Step 8: Clean up extra spaces
-        text = text.replace( /[ \t]+/g, ' ' ).trim();
+        // Step 9: Clean up extra spaces
+        text = text.replace( /[ \t]+/g, ' ' );
 
-        // Step 9: Restore list items
-        text = text.replace( /<<<LIST>>>/g, '\n' ).trim();
+        // Step 10: Restore list items
+        text = text.replace( /<<<LIST>>>/g, '\n' );
 
-        return text;
+        return text.trim();
     }
 
 }
